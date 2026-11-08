@@ -1,8 +1,35 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-08T16:23:56.080Z",
-  "last_success": "2026-11-08T162342Z-150ed9554c",
+  "updated_at": "2026-11-08T16:27:46.145Z",
+  "last_success": "2026-11-08T162731Z-09e0d9395d",
   "snapshots": [
+    {
+      "id": "2026-11-08T162731Z-09e0d9395d",
+      "date": "2026-11-08",
+      "started_at": "2026-11-08T16:27:31.920Z",
+      "completed_at": "2026-11-08T16:27:46.145Z",
+      "status": "success",
+      "counts": {
+        "models": 705,
+        "providers": 121,
+        "embedding_models": 40,
+        "image_models": 63,
+        "video_models": 33,
+        "eu_models": 78,
+        "zdr_endpoints": 1117,
+        "model_count": 1,
+        "model_rss": 705,
+        "blog_posts": 166,
+        "status_incidents": 6,
+        "upstream_openapi": 1,
+        "docs_index": 1,
+        "site_index": 1,
+        "endpoints": 1776,
+        "image_endpoints": 67,
+        "authenticated_data": 0
+      },
+      "errors": []
+    },
     {
       "id": "2026-11-08T162342Z-150ed9554c",
       "date": "2026-11-08",
