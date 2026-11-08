@@ -1,0 +1,143 @@
+name: Daily OpenRouter snapshot
+
+on:
+  schedule:
+    - cron: '23 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: openrouter-data-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out collector code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Check out the independent archive branch
+        uses: actions/checkout@v4
+        with:
+          ref: data
+          path: data
+          fetch-depth: 1
+      - name: Collect a real snapshot
+        id: collect
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run sync -- --output data 2>&1 | tee sync.log
+      - name: Commit both successful and failed attempt reports
+        id: publish
+        if: ${{ always() && steps.collect.outcome != 'skipped' }}
+        working-directory: data
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          if ! git diff --cached --quiet; then
+            git commit -m "Archive OpenRouter collection attempt ${GITHUB_RUN_ID}"
+          fi
+          git push origin HEAD:data
+      - name: Report archive publication and validate the attempt
+        id: report
+        if: ${{ always() && steps.collect.outcome != 'skipped' }}
+        env:
+          SNAPSHOT_ID: ${{ steps.collect.outputs.snapshot_id }}
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const id = process.env.SNAPSHOT_ID ?? '';
+          const safeId = /^\d{4}-\d{2}-\d{2}T\d{6}Z-[a-z0-9]+$/.test(id);
+          let report;
+          try {
+            const index = JSON.parse(fs.readFileSync('data/index.json', 'utf8'));
+            const attempt = index.snapshots.find(s => s.id === id);
+            const manifestPath = safeId ? `data/runs/${id}/manifest.json` : '';
+            const manifest = manifestPath ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : null;
+            const valid = !!attempt && manifest?.id === id && manifest.status === attempt.status &&
+              (attempt.status === 'success' ? index.last_success === id : index.last_success !== id);
+            report = {
+              snapshot: id || null,
+              collection: process.env.COLLECT_OUTCOME,
+              publication: process.env.PUBLISH_OUTCOME,
+              valid_attempt: valid,
+              status: attempt?.status ?? null,
+              last_success: index.last_success,
+              errors: attempt?.errors ?? ['Collector did not produce an identifiable attempt.'],
+            };
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `snapshot=${id}\nvalid_attempt=${valid}\nstatus=${attempt?.status ?? ''}\nmanifest=${manifestPath}\n`);
+          } catch (error) {
+            report = {
+              snapshot: id || null,
+              collection: process.env.COLLECT_OUTCOME,
+              publication: process.env.PUBLISH_OUTCOME,
+              valid_attempt: false,
+              error: error instanceof Error ? error.message : String(error),
+            };
+          }
+          fs.writeFileSync('sync-report.json', JSON.stringify(report, null, 2));
+          const success = report.collection === 'success' && report.publication === 'success' && report.valid_attempt && report.status === 'success';
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+            `\n## Archive publication\n\nResult: **${success ? 'success' : 'FAILED'}**\n\n` +
+            '```json\n' + JSON.stringify(report, null, 2) + '\n```\n\n' +
+            'Failed collection attempts are preserved on the data branch; they do not advance last_success. GitHub raw and service caches may take several minutes to expose a new index.\n');
+          NODE
+      - name: Preserve logs and the latest manifest
+        if: ${{ always() && steps.collect.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-report-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            sync.log
+            sync-report.json
+            data/index.json
+            ${{ steps.report.outputs.manifest }}
+      - name: Verify the published snapshot on Cloudflare
+        if: ${{ steps.collect.outcome == 'success' && steps.publish.outcome == 'success' && steps.report.outputs.valid_attempt == 'true' && steps.report.outputs.status == 'success' }}
+        env:
+          SNAPSHOT_ID: ${{ steps.report.outputs.snapshot }}
+        shell: bash
+        run: |
+          for attempt in $(seq 1 13); do
+            if npm run smoke -- https://openrouter-data.pages.dev --expected-snapshot "$SNAPSHOT_ID"; then
+              printf '\nOnline verification: **passed** for `%s`.\n' "$SNAPSHOT_ID" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if [ "$attempt" -lt 13 ]; then sleep 30; fi
+          done
+          printf '\nOnline verification: **FAILED** after the cache propagation retry window. The archived snapshot remains preserved.\n' >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+      - name: Fail the job when collection or publication failed
+        if: ${{ always() && steps.collect.outcome != 'skipped' }}
+        env:
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+          VALID_ATTEMPT: ${{ steps.report.outputs.valid_attempt }}
+          SNAPSHOT_STATUS: ${{ steps.report.outputs.status }}
+        shell: bash
+        run: |
+          if [ "$COLLECT_OUTCOME" != success ] || [ "$PUBLISH_OUTCOME" != success ] || [ "$VALID_ATTEMPT" != true ] || [ "$SNAPSHOT_STATUS" != success ]; then
+            echo '::error::OpenRouter synchronization failed. See the collector summary and sync-report artifact; the last successful data is retained.'
+            exit 1
+          fi

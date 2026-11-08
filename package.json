@@ -1,0 +1,30 @@
+{
+  "name": "openrouter-data",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test && npm run validate:openapi",
+    "sync": "tsx scripts/sync.ts",
+    "validate:openapi": "tsx scripts/validate-openapi.ts",
+    "deploy": "wrangler pages deploy dist --project-name openrouter-data --branch main",
+    "dev": "wrangler pages dev dist",
+    "smoke": "tsx scripts/smoke.ts",
+    "build": "tsx scripts/build.ts"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.3.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "^12.0.0",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.1.0",
+    "wrangler": "^4.0.0"
+  }
+}

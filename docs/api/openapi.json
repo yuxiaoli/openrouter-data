@@ -1,0 +1,4256 @@
+{
+  "openapi": "3.1.0",
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "info": {
+    "title": "OpenRouter Data Archive API",
+    "version": "1.0.0",
+    "description": "Independent, unofficial daily archive and read-only query service for public OpenRouter data. Official JSON/RSS sources are attribution, not this deployment. Each attempt preserves provenance, timestamps, coverage and missing content. Failed collection never replaces last_success or publishes an empty success. Dates are UTC and historical coverage begins with the first real successful collection. Public model prompt/completion prices are USD/token; other original billing units remain unchanged. HEAD mirrors GET status/headers without a body; OPTIONS returns 204 with CORS headers. Only listed query parameters are accepted."
+  },
+  "servers": [
+    {
+      "url": "https://openrouter-data.pages.dev",
+      "description": "Independent Cloudflare Pages service"
+    }
+  ],
+  "security": [],
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "getServiceInfo",
+        "summary": "Independent archive service information",
+        "description": "JSON metadata and links for this independent service. No query parameters.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceInfo"
+                },
+                "examples": {
+                  "actualFirstSync": {
+                    "summary": "Actual successful archive 2026-11-08T161526Z-89198e08b6",
+                    "description": "Captured from the implemented handler using actual archived files. Request: /. Historical freshness metadata describes example capture time.",
+                    "value": {
+                      "name": "OpenRouter Data Archive",
+                      "independent_service": true,
+                      "repository": "https://github.com/yuxiaoli/openrouter-data",
+                      "openapi": "https://openrouter-data.pages.dev/docs/api/openapi.json",
+                      "data": "https://openrouter-data.pages.dev/api/v1/data?type=models",
+                      "rss": "https://openrouter-data.pages.dev/rss.xml",
+                      "sources": "https://github.com/yuxiaoli/openrouter-data/blob/main/docs/sources.md",
+                      "description": "Independent daily archive of publicly accessible OpenRouter data. Not operated by OpenRouter. Official source URLs are attribution, not this service."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown, repeated, malformed, mutually exclusive or dataset-inapplicable parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_QUERY",
+                    "message": "provider is not supported for type=models."
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route, exact snapshot or UTC collection date; no successful matching snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "SNAPSHOT_NOT_FOUND",
+                    "message": "No successful snapshot matches the selection; history starts with actual collection."
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method. Allow: GET, HEAD, OPTIONS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "METHOD_NOT_ALLOWED",
+                    "message": "Use GET or HEAD."
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Archive fetch/JSON failure (ARCHIVE_UNAVAILABLE) or schema, record-count or processing failure (INVALID_ARCHIVE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_ARCHIVE",
+                    "message": "Dataset failed schema or record-count validation."
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "NO_SUCCESSFUL_SNAPSHOT, FAILED_SNAPSHOT or DATASET_UNAVAILABLE. Last successful data remains retained; failures are not empty successes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "DATASET_UNAVAILABLE",
+                    "message": "This dataset was not successfully collected in this snapshot."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Service metadata",
+            "source": "curl \"https://openrouter-data.pages.dev/\""
+          }
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Archive freshness and synchronization health",
+        "description": "No query parameters. Reads the archive index. 200 ok requires a last successful completion within 36 hours and the most recent attempt successful. Otherwise 503 degraded/unavailable with the same Health body. stale reports age only; a failed latest attempt can produce degraded with stale=false. Last successful API results remain available.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Fresh archive and latest attempt succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                },
+                "examples": {
+                  "actualFirstSync": {
+                    "summary": "Actual successful archive 2026-11-08T161526Z-89198e08b6",
+                    "description": "Captured from the implemented handler using actual archived files. Request: /healthz. Historical freshness metadata describes example capture time.",
+                    "value": {
+                      "status": "ok",
+                      "last_success": "2026-11-08T161526Z-89198e08b6",
+                      "latest_attempt": {
+                        "id": "2026-11-08T161526Z-89198e08b6",
+                        "date": "2026-11-08",
+                        "started_at": "2026-11-08T16:15:26.138Z",
+                        "completed_at": "2026-11-08T16:15:59.450Z",
+                        "status": "success",
+                        "counts": {
+                          "models": 705,
+                          "providers": 121,
+                          "embedding_models": 40,
+                          "image_models": 63,
+                          "video_models": 33,
+                          "eu_models": 78,
+                          "zdr_endpoints": 1117,
+                          "model_count": 1,
+                          "model_rss": 705,
+                          "blog_posts": 166,
+                          "status_incidents": 6,
+                          "upstream_openapi": 1,
+                          "docs_index": 1,
+                          "site_index": 1,
+                          "endpoints": 1776,
+                          "image_endpoints": 67,
+                          "authenticated_data": 0
+                        },
+                        "errors": []
+                      },
+                      "stale": false,
+                      "updated_at": "2026-11-08T16:15:59.450Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown, repeated, malformed, mutually exclusive or dataset-inapplicable parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_QUERY",
+                    "message": "provider is not supported for type=models."
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route, exact snapshot or UTC collection date; no successful matching snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "SNAPSHOT_NOT_FOUND",
+                    "message": "No successful snapshot matches the selection; history starts with actual collection."
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method. Allow: GET, HEAD, OPTIONS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "METHOD_NOT_ALLOWED",
+                    "message": "Use GET or HEAD."
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Archive fetch/JSON failure (ARCHIVE_UNAVAILABLE) or schema, record-count or processing failure (INVALID_ARCHIVE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_ARCHIVE",
+                    "message": "Dataset failed schema or record-count validation."
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Missing/stale archive or failed latest attempt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                },
+                "example": {
+                  "status": "unavailable",
+                  "last_success": null,
+                  "latest_attempt": null,
+                  "stale": true,
+                  "updated_at": null
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Health",
+            "source": "curl -i \"https://openrouter-data.pages.dev/healthz\""
+          }
+        ]
+      }
+    },
+    "/api/v1/snapshots": {
+      "get": {
+        "operationId": "listSnapshots",
+        "summary": "List collection attempts",
+        "description": "Query parameters are strict: unknown names, duplicate keys and inapplicable filters return 400. Comma-separated values use OR within each field and AND across fields; exact filters are case insensitive and spaces are not trimmed. All results come from stored snapshots, with no live upstream query. Collection dates are UTC, distinct from model creation/publication dates. History begins with actual successful collection, with no invented backfill. A zero-match query on a successfully collected dataset is a valid empty result. Includes failed attempts, newest completed_at first. from/to bound UTC collection dates inclusively.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive earliest UTC collection date.",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive latest UTC collection date; must be on or after from.",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filter attempt status; omission includes both.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "success",
+                "failed"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; decimal integer notation only.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of filtered/ordered rows or buckets to skip; zero based.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000000,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnapshotsEnvelope"
+                },
+                "examples": {
+                  "actualFirstSync": {
+                    "summary": "Actual successful archive 2026-11-08T161526Z-89198e08b6",
+                    "description": "Captured from the implemented handler using actual archived files. Request: /api/v1/snapshots?limit=1. Historical freshness metadata describes example capture time.",
+                    "value": {
+                      "meta": {
+                        "schema_version": 1,
+                        "updated_at": "2026-11-08T16:15:59.450Z",
+                        "last_success": "2026-11-08T161526Z-89198e08b6"
+                      },
+                      "data": [
+                        {
+                          "id": "2026-11-08T161526Z-89198e08b6",
+                          "date": "2026-11-08",
+                          "started_at": "2026-11-08T16:15:26.138Z",
+                          "completed_at": "2026-11-08T16:15:59.450Z",
+                          "status": "success",
+                          "counts": {
+                            "models": 705,
+                            "providers": 121,
+                            "embedding_models": 40,
+                            "image_models": 63,
+                            "video_models": 33,
+                            "eu_models": 78,
+                            "zdr_endpoints": 1117,
+                            "model_count": 1,
+                            "model_rss": 705,
+                            "blog_posts": 166,
+                            "status_incidents": 6,
+                            "upstream_openapi": 1,
+                            "docs_index": 1,
+                            "site_index": 1,
+                            "endpoints": 1776,
+                            "image_endpoints": 67,
+                            "authenticated_data": 0
+                          },
+                          "errors": []
+                        }
+                      ],
+                      "pagination": {
+                        "total": 1,
+                        "limit": 1,
+                        "offset": 0,
+                        "has_more": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown, repeated, malformed, mutually exclusive or dataset-inapplicable parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_QUERY",
+                    "message": "provider is not supported for type=models."
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route, exact snapshot or UTC collection date; no successful matching snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "SNAPSHOT_NOT_FOUND",
+                    "message": "No successful snapshot matches the selection; history starts with actual collection."
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method. Allow: GET, HEAD, OPTIONS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "METHOD_NOT_ALLOWED",
+                    "message": "Use GET or HEAD."
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Archive fetch/JSON failure (ARCHIVE_UNAVAILABLE) or schema, record-count or processing failure (INVALID_ARCHIVE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_ARCHIVE",
+                    "message": "Dataset failed schema or record-count validation."
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "NO_SUCCESSFUL_SNAPSHOT, FAILED_SNAPSHOT or DATASET_UNAVAILABLE. Last successful data remains retained; failures are not empty successes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "DATASET_UNAVAILABLE",
+                    "message": "This dataset was not successfully collected in this snapshot."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Inclusive date range and status",
+            "source": "curl \"https://openrouter-data.pages.dev/api/v1/snapshots?from=2026-11-08&to=2026-11-09&status=success&limit=20&offset=0\""
+          }
+        ]
+      }
+    },
+    "/api/v1/manifest": {
+      "get": {
+        "operationId": "getManifest",
+        "summary": "Inspect an attempt and all source provenance",
+        "description": "Query parameters are strict: unknown names, duplicate keys and inapplicable filters return 400. Comma-separated values use OR within each field and AND across fields; exact filters are case insensitive and spaces are not trimmed. All results come from stored snapshots, with no live upstream query. Collection dates are UTC, distinct from model creation/publication dates. History begins with actual successful collection, with no invented backfill. A zero-match query on a successfully collected dataset is a valid empty result. date selects a successful run; snapshot can inspect a failed attempt. Returns the complete manifest, with no pagination.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "description": "UTC collection date or latest. Resolves to the latest successful run on that exact date, not a nearest-date fallback. Mutually exclusive with snapshot.",
+            "schema": {
+              "oneOf": [
+                {
+                  "const": "latest"
+                },
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                }
+              ],
+              "default": "latest"
+            }
+          },
+          {
+            "name": "snapshot",
+            "in": "query",
+            "required": false,
+            "description": "Exact immutable run ID. Mutually exclusive with date. Failed attempts may be inspected through manifest/datasets; data/RSS/dimensions reject failed attempts with 503.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{6}Z-[a-z0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManifestEnvelope"
+                },
+                "examples": {
+                  "actualFirstSync": {
+                    "summary": "Actual successful archive 2026-11-08T161526Z-89198e08b6",
+                    "description": "Captured from the implemented handler using actual archived files. Request: /api/v1/manifest?snapshot=2026-11-08T161526Z-89198e08b6. Historical freshness metadata describes example capture time.",
+                    "value": {
+                      "meta": {
+                        "schema_version": 1,
+                        "snapshot": "2026-11-08T161526Z-89198e08b6",
+                        "date": "2026-11-08",
+                        "collected_at": "2026-11-08T16:15:59.450Z",
+                        "status": "success",
+                        "last_success": "2026-11-08T161526Z-89198e08b6",
+                        "latest_attempt_status": "success",
+                        "stale": false,
+                        "coverage": null
+                      },
+                      "data": {
+                        "id": "2026-11-08T161526Z-89198e08b6",
+                        "date": "2026-11-08",
+                        "started_at": "2026-11-08T16:15:26.138Z",
+                        "completed_at": "2026-11-08T16:15:59.450Z",
+                        "status": "success",
+                        "counts": {
+                          "models": 705,
+                          "providers": 121,
+                          "embedding_models": 40,
+                          "image_models": 63,
+                          "video_models": 33,
+                          "eu_models": 78,
+                          "zdr_endpoints": 1117,
+                          "model_count": 1,
+                          "model_rss": 705,
+                          "blog_posts": 166,
+                          "status_incidents": 6,
+                          "upstream_openapi": 1,
+                          "docs_index": 1,
+                          "site_index": 1,
+                          "endpoints": 1776,
+                          "image_endpoints": 67,
+                          "authenticated_data": 0
+                        },
+                        "errors": [],
+                        "schema_version": 1,
+                        "datasets": [
+                          {
+                            "id": "models",
+                            "source_url": "https://openrouter.ai/api/v1/models?output_modalities=all",
+                            "collected_at": "2026-11-08T16:15:26.768Z",
+                            "status": "ok",
+                            "record_count": 705,
+                            "coverage": "All output modalities explicitly requested; public currently listed models, not retired or private models.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/models.json",
+                            "sha256": "bde879fe7d252fc27654751c099de033cb14c173376d53d12bf4ca7667acde73",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/api/v1/models?output_modalities=all",
+                                "collected_at": "2026-11-08T16:15:26.768Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/models.json",
+                                "sha256": "bde879fe7d252fc27654751c099de033cb14c173376d53d12bf4ca7667acde73"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "providers",
+                            "source_url": "https://openrouter.ai/api/v1/providers",
+                            "collected_at": "2026-11-08T16:15:26.633Z",
+                            "status": "ok",
+                            "record_count": 121,
+                            "coverage": "Public provider directory; null policy, headquarters and datacenter values remain null.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/providers.json",
+                            "sha256": "147d8715d0bb3da5c57eecb92da5ea0e677d834d0770064fdabc157a566e31e0",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/api/v1/providers",
+                                "collected_at": "2026-11-08T16:15:26.633Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/providers.json",
+                                "sha256": "147d8715d0bb3da5c57eecb92da5ea0e677d834d0770064fdabc157a566e31e0"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "embedding_models",
+                            "source_url": "https://openrouter.ai/api/v1/embeddings/models",
+                            "collected_at": "2026-11-08T16:15:26.644Z",
+                            "status": "ok",
+                            "record_count": 40,
+                            "coverage": "Dedicated embeddings catalogue; can differ from the all-modality catalogue.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/embedding_models.json",
+                            "sha256": "094994a8619b61edf5e77e6ec4119aca9d8ce17272808642ffac9fca847691c7",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/api/v1/embeddings/models",
+                                "collected_at": "2026-11-08T16:15:26.644Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/embedding_models.json",
+                                "sha256": "094994a8619b61edf5e77e6ec4119aca9d8ce17272808642ffac9fca847691c7"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "image_models",
+                            "source_url": "https://openrouter.ai/api/v1/images/models",
+                            "collected_at": "2026-11-08T16:15:26.783Z",
+                            "status": "ok",
+                            "record_count": 63,
+                            "coverage": "Dedicated image catalogue including structured parameter capabilities and endpoint links.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/image_models.json",
+                            "sha256": "d84a2526d5200d83bf4d72b6df7f7cea72a23b84f7ebb288bc1957049ed59c02",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/api/v1/images/models",
+                                "collected_at": "2026-11-08T16:15:26.783Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/image_models.json",
+                                "sha256": "d84a2526d5200d83bf4d72b6df7f7cea72a23b84f7ebb288bc1957049ed59c02"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "video_models",
+                            "source_url": "https://openrouter.ai/api/v1/videos/models",
+                            "collected_at": "2026-11-08T16:15:26.783Z",
+                            "status": "ok",
+                            "record_count": 33,
+                            "coverage": "Dedicated video catalogue including supported durations, resolutions and SKU prices.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/video_models.json",
+                            "sha256": "3ad7dcf5de18e08abba7ec9ffa8ade49f411746b5e179c05647dc7dacfccde30",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/api/v1/videos/models",
+                                "collected_at": "2026-11-08T16:15:26.783Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/video_models.json",
+                                "sha256": "3ad7dcf5de18e08abba7ec9ffa8ade49f411746b5e179c05647dc7dacfccde30"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "eu_models",
+                            "source_url": "https://eu.openrouter.ai/api/v1/models?output_modalities=all",
+                            "collected_at": "2026-11-08T16:15:28.011Z",
+                            "status": "ok",
+                            "record_count": 78,
+                            "coverage": "EU hostname public catalogue, not proof of each endpoint compliance or all EU usage.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/eu_models.json",
+                            "sha256": "264bbba8165bf46c54a1a70a29a7fbef5ec89477796de83154304b343d7fb951",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://eu.openrouter.ai/api/v1/models?output_modalities=all",
+                                "collected_at": "2026-11-08T16:15:28.011Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/eu_models.json",
+                                "sha256": "264bbba8165bf46c54a1a70a29a7fbef5ec89477796de83154304b343d7fb951"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "zdr_endpoints",
+                            "source_url": "https://openrouter.ai/api/v1/endpoints/zdr",
+                            "collected_at": "2026-11-08T16:15:26.993Z",
+                            "status": "ok",
+                            "record_count": 1117,
+                            "coverage": "Public zero-data-retention endpoint listing as reported by OpenRouter.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/zdr_endpoints.json",
+                            "sha256": "eaa0646d97c654dad34fcd8bc71d227dad379f63e21c37d7b38759aa535b0e0a",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/api/v1/endpoints/zdr",
+                                "collected_at": "2026-11-08T16:15:26.993Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/zdr_endpoints.json",
+                                "sha256": "eaa0646d97c654dad34fcd8bc71d227dad379f63e21c37d7b38759aa535b0e0a"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "model_count",
+                            "source_url": "https://openrouter.ai/api/v1/models/count?output_modalities=all",
+                            "collected_at": "2026-11-08T16:15:26.899Z",
+                            "status": "ok",
+                            "record_count": 1,
+                            "coverage": "All-modality model count at its own request time; requests are not an atomic upstream transaction.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/model_count.json",
+                            "sha256": "bda5a5bc8fb764317ce3e9d5aea8a181fffa48e378d1b2a62e6207c6f4567c6f",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/api/v1/models/count?output_modalities=all",
+                                "collected_at": "2026-11-08T16:15:26.899Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/model_count.json",
+                                "sha256": "bda5a5bc8fb764317ce3e9d5aea8a181fffa48e378d1b2a62e6207c6f4567c6f"
+                              }
+                            ],
+                            "catalogue_count": 705,
+                            "count_matches_catalogue": true
+                          },
+                          {
+                            "id": "model_rss",
+                            "source_url": "https://openrouter.ai/api/v1/models?use_rss=true&output_modalities=all",
+                            "collected_at": "2026-11-08T16:15:27.068Z",
+                            "status": "ok",
+                            "record_count": 705,
+                            "coverage": "Official current model feed window. Item publication time is upstream time, not collection time.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/model_rss.xml",
+                            "sha256": "27244acf922b266ba5b252f4c0f78ba23419f8afd24af804c2afd1ad534eb71c",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/api/v1/models?use_rss=true&output_modalities=all",
+                                "collected_at": "2026-11-08T16:15:27.068Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/model_rss.xml",
+                                "sha256": "27244acf922b266ba5b252f4c0f78ba23419f8afd24af804c2afd1ad534eb71c"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "blog_posts",
+                            "source_url": "https://openrouter.ai/blog/feed.xml",
+                            "collected_at": "2026-11-08T16:15:27.164Z",
+                            "status": "ok",
+                            "record_count": 166,
+                            "coverage": "Official blog RSS feed window, not a reconstruction of every historical blog version.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/blog_posts.xml",
+                            "sha256": "3313fb9b9ae0d345cb7db0e11c35d6a4bd5ca736bc0fe1528c7d327ef9298fc7",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/blog/feed.xml",
+                                "collected_at": "2026-11-08T16:15:27.164Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/blog_posts.xml",
+                                "sha256": "3313fb9b9ae0d345cb7db0e11c35d6a4bd5ca736bc0fe1528c7d327ef9298fc7"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "status_incidents",
+                            "source_url": "https://status.openrouter.ai/history.rss",
+                            "collected_at": "2026-11-08T16:15:27.732Z",
+                            "status": "ok",
+                            "record_count": 6,
+                            "coverage": "Official incident RSS bounded window. Absence of an item does not prove absence of an incident.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/status_incidents.xml",
+                            "sha256": "6b5262a55514995c18c3f643a95763ff2c9e8ef6f4476de359709d43bd662ae0",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://status.openrouter.ai/history.rss",
+                                "collected_at": "2026-11-08T16:15:27.732Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/status_incidents.xml",
+                                "sha256": "6b5262a55514995c18c3f643a95763ff2c9e8ef6f4476de359709d43bd662ae0"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "upstream_openapi",
+                            "source_url": "https://openrouter.ai/openapi.json",
+                            "collected_at": "2026-11-08T16:15:28.701Z",
+                            "status": "ok",
+                            "record_count": 1,
+                            "coverage": "Original official OpenAPI document, including authenticated operations that this collector does not execute.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/upstream_openapi.json",
+                            "sha256": "a698ac85ec9c7ae8bfa6add30d28e5f95c6b042ac547450e30ff6940ef6e5bd4",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/openapi.json",
+                                "collected_at": "2026-11-08T16:15:28.701Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/upstream_openapi.json",
+                                "sha256": "a698ac85ec9c7ae8bfa6add30d28e5f95c6b042ac547450e30ff6940ef6e5bd4"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "docs_index",
+                            "source_url": "https://openrouter.ai/docs/llms.txt",
+                            "collected_at": "2026-11-08T16:15:27.928Z",
+                            "status": "ok",
+                            "record_count": 1,
+                            "coverage": "Official documentation index; linked full documentation pages are not recursively downloaded.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/docs_index.txt",
+                            "sha256": "12bfb33782ab57758c234c9cc1cf3d7ff6b72ea9e779c468285f2dc7c95b00a4",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/docs/llms.txt",
+                                "collected_at": "2026-11-08T16:15:27.928Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/docs_index.txt",
+                                "sha256": "12bfb33782ab57758c234c9cc1cf3d7ff6b72ea9e779c468285f2dc7c95b00a4"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "site_index",
+                            "source_url": "https://openrouter.ai/llms.txt",
+                            "collected_at": "2026-11-08T16:15:28.250Z",
+                            "status": "ok",
+                            "record_count": 1,
+                            "coverage": "Official site language-model index; not every linked page or asset is archived.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/site_index.txt",
+                            "sha256": "d4a245533d423da423373f36946dbd33b11555994c68b70f6b3b591df5bb8645",
+                            "http_status": 200,
+                            "pages": [
+                              {
+                                "source_url": "https://openrouter.ai/llms.txt",
+                                "collected_at": "2026-11-08T16:15:28.250Z",
+                                "http_status": 200,
+                                "attempts": 1,
+                                "raw_path": "raw/site_index.txt",
+                                "sha256": "d4a245533d423da423373f36946dbd33b11555994c68b70f6b3b591df5bb8645"
+                              }
+                            ]
+                          },
+                          {
+                            "id": "endpoints",
+                            "source_url": "https://openrouter.ai/api/v1/models/{model_id}/endpoints",
+                            "collected_at": "2026-11-08T16:15:57.131Z",
+                            "status": "ok",
+                            "record_count": 1776,
+                            "coverage": "Enumerated every model in this run's all-modality catalogue. Endpoint statistics/prices are observed values, not guaranteed service levels. Empty endpoint arrays are retained in raw responses.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/endpoints.ndjson",
+                            "sha256": "15161049a01fa0024263c3161924b2d77a369a13ef759a30d23d439b6ed5701b",
+                            "models_requested": 705,
+                            "models_succeeded": 705,
+                            "models_with_no_endpoints": 33,
+                            "request_started_at": "2026-11-08T16:15:28.736Z"
+                          },
+                          {
+                            "id": "image_endpoints",
+                            "source_url": "https://openrouter.ai/api/v1/images/models/{model_id}/endpoints",
+                            "collected_at": "2026-11-08T16:15:59.450Z",
+                            "status": "ok",
+                            "record_count": 67,
+                            "coverage": "Enumerated every model in this run's dedicated image catalogue. Endpoint statistics/prices are observed values, not guaranteed service levels. Empty endpoint arrays are retained in raw responses.",
+                            "unavailable": [],
+                            "errors": [],
+                            "raw_path": "raw/image_endpoints.ndjson",
+                            "sha256": "aa1e330afb76ca15ef573e26d70070c421f0c1ef875a62e272a9278187068527",
+                            "models_requested": 63,
+                            "models_succeeded": 63,
+                            "models_with_no_endpoints": 1,
+                            "request_started_at": "2026-11-08T16:15:57.131Z"
+                          },
+                          {
+                            "id": "authenticated_data",
+                            "source_url": "https://openrouter.ai/api/v1/datasets/",
+                            "documentation_url": "https://openrouter.ai/docs/cookbook/administration/data-api",
+                            "collected_at": "2026-11-08T16:15:59.450Z",
+                            "status": "unavailable",
+                            "record_count": 0,
+                            "coverage": "Not collected: authenticated analytics/Data API (rankings, app rankings, benchmarks, session costs), account credits, keys, generations, private/provider-preference data, and usage records.",
+                            "unavailable": [
+                              "Requires authorized OpenRouter credentials and appropriate data usage rights. No credentials are requested or stored; no ranking or usage values are synthesized.",
+                              "The public catalogues do not expose a complete historical record of retired models, endpoint outages, requests, revenue or private/ZDR traffic.",
+                              "status.openrouter.ai/api/v2/summary.json returned HTTP 403 during source audit; only the public incident RSS window is collected."
+                            ],
+                            "errors": []
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown, repeated, malformed, mutually exclusive or dataset-inapplicable parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_QUERY",
+                    "message": "provider is not supported for type=models."
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route, exact snapshot or UTC collection date; no successful matching snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "SNAPSHOT_NOT_FOUND",
+                    "message": "No successful snapshot matches the selection; history starts with actual collection."
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method. Allow: GET, HEAD, OPTIONS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "METHOD_NOT_ALLOWED",
+                    "message": "Use GET or HEAD."
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Archive fetch/JSON failure (ARCHIVE_UNAVAILABLE) or schema, record-count or processing failure (INVALID_ARCHIVE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_ARCHIVE",
+                    "message": "Dataset failed schema or record-count validation."
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "NO_SUCCESSFUL_SNAPSHOT, FAILED_SNAPSHOT or DATASET_UNAVAILABLE. Last successful data remains retained; failures are not empty successes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "DATASET_UNAVAILABLE",
+                    "message": "This dataset was not successfully collected in this snapshot."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Latest provenance",
+            "source": "curl \"https://openrouter-data.pages.dev/api/v1/manifest?date=latest\""
+          }
+        ]
+      }
+    },
+    "/api/v1/datasets": {
+      "get": {
+        "operationId": "listDatasets",
+        "summary": "Inspect dataset coverage reports",
+        "description": "Query parameters are strict: unknown names, duplicate keys and inapplicable filters return 400. Comma-separated values use OR within each field and AND across fields; exact filters are case insensitive and spaces are not trimmed. All results come from stored snapshots, with no live upstream query. Collection dates are UTC, distinct from model creation/publication dates. History begins with actual successful collection, with no invented backfill. A zero-match query on a successfully collected dataset is a valid empty result. Returns the complete manifest datasets array including ok, failed and unavailable sources, including original document/OpenAPI reports. No pagination.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "description": "UTC collection date or latest. Resolves to the latest successful run on that exact date, not a nearest-date fallback. Mutually exclusive with snapshot.",
+            "schema": {
+              "oneOf": [
+                {
+                  "const": "latest"
+                },
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                }
+              ],
+              "default": "latest"
+            }
+          },
+          {
+            "name": "snapshot",
+            "in": "query",
+            "required": false,
+            "description": "Exact immutable run ID. Mutually exclusive with date. Failed attempts may be inspected through manifest/datasets; data/RSS/dimensions reject failed attempts with 503.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{6}Z-[a-z0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetsEnvelope"
+                },
+                "examples": {
+                  "actualFirstSync": {
+                    "summary": "Actual successful archive 2026-11-08T161526Z-89198e08b6",
+                    "description": "Captured from the implemented handler using actual archived files. Request: /api/v1/datasets?snapshot=2026-11-08T161526Z-89198e08b6. Historical freshness metadata describes example capture time.",
+                    "value": {
+                      "meta": {
+                        "schema_version": 1,
+                        "snapshot": "2026-11-08T161526Z-89198e08b6",
+                        "date": "2026-11-08",
+                        "collected_at": "2026-11-08T16:15:59.450Z",
+                        "status": "success",
+                        "last_success": "2026-11-08T161526Z-89198e08b6",
+                        "latest_attempt_status": "success",
+                        "stale": false,
+                        "coverage": null
+                      },
+                      "data": [
+                        {
+                          "id": "models",
+                          "source_url": "https://openrouter.ai/api/v1/models?output_modalities=all",
+                          "collected_at": "2026-11-08T16:15:26.768Z",
+                          "status": "ok",
+                          "record_count": 705,
+                          "coverage": "All output modalities explicitly requested; public currently listed models, not retired or private models.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/models.json",
+                          "sha256": "bde879fe7d252fc27654751c099de033cb14c173376d53d12bf4ca7667acde73",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/api/v1/models?output_modalities=all",
+                              "collected_at": "2026-11-08T16:15:26.768Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/models.json",
+                              "sha256": "bde879fe7d252fc27654751c099de033cb14c173376d53d12bf4ca7667acde73"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "providers",
+                          "source_url": "https://openrouter.ai/api/v1/providers",
+                          "collected_at": "2026-11-08T16:15:26.633Z",
+                          "status": "ok",
+                          "record_count": 121,
+                          "coverage": "Public provider directory; null policy, headquarters and datacenter values remain null.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/providers.json",
+                          "sha256": "147d8715d0bb3da5c57eecb92da5ea0e677d834d0770064fdabc157a566e31e0",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/api/v1/providers",
+                              "collected_at": "2026-11-08T16:15:26.633Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/providers.json",
+                              "sha256": "147d8715d0bb3da5c57eecb92da5ea0e677d834d0770064fdabc157a566e31e0"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "embedding_models",
+                          "source_url": "https://openrouter.ai/api/v1/embeddings/models",
+                          "collected_at": "2026-11-08T16:15:26.644Z",
+                          "status": "ok",
+                          "record_count": 40,
+                          "coverage": "Dedicated embeddings catalogue; can differ from the all-modality catalogue.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/embedding_models.json",
+                          "sha256": "094994a8619b61edf5e77e6ec4119aca9d8ce17272808642ffac9fca847691c7",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/api/v1/embeddings/models",
+                              "collected_at": "2026-11-08T16:15:26.644Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/embedding_models.json",
+                              "sha256": "094994a8619b61edf5e77e6ec4119aca9d8ce17272808642ffac9fca847691c7"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "image_models",
+                          "source_url": "https://openrouter.ai/api/v1/images/models",
+                          "collected_at": "2026-11-08T16:15:26.783Z",
+                          "status": "ok",
+                          "record_count": 63,
+                          "coverage": "Dedicated image catalogue including structured parameter capabilities and endpoint links.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/image_models.json",
+                          "sha256": "d84a2526d5200d83bf4d72b6df7f7cea72a23b84f7ebb288bc1957049ed59c02",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/api/v1/images/models",
+                              "collected_at": "2026-11-08T16:15:26.783Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/image_models.json",
+                              "sha256": "d84a2526d5200d83bf4d72b6df7f7cea72a23b84f7ebb288bc1957049ed59c02"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "video_models",
+                          "source_url": "https://openrouter.ai/api/v1/videos/models",
+                          "collected_at": "2026-11-08T16:15:26.783Z",
+                          "status": "ok",
+                          "record_count": 33,
+                          "coverage": "Dedicated video catalogue including supported durations, resolutions and SKU prices.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/video_models.json",
+                          "sha256": "3ad7dcf5de18e08abba7ec9ffa8ade49f411746b5e179c05647dc7dacfccde30",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/api/v1/videos/models",
+                              "collected_at": "2026-11-08T16:15:26.783Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/video_models.json",
+                              "sha256": "3ad7dcf5de18e08abba7ec9ffa8ade49f411746b5e179c05647dc7dacfccde30"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "eu_models",
+                          "source_url": "https://eu.openrouter.ai/api/v1/models?output_modalities=all",
+                          "collected_at": "2026-11-08T16:15:28.011Z",
+                          "status": "ok",
+                          "record_count": 78,
+                          "coverage": "EU hostname public catalogue, not proof of each endpoint compliance or all EU usage.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/eu_models.json",
+                          "sha256": "264bbba8165bf46c54a1a70a29a7fbef5ec89477796de83154304b343d7fb951",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://eu.openrouter.ai/api/v1/models?output_modalities=all",
+                              "collected_at": "2026-11-08T16:15:28.011Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/eu_models.json",
+                              "sha256": "264bbba8165bf46c54a1a70a29a7fbef5ec89477796de83154304b343d7fb951"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "zdr_endpoints",
+                          "source_url": "https://openrouter.ai/api/v1/endpoints/zdr",
+                          "collected_at": "2026-11-08T16:15:26.993Z",
+                          "status": "ok",
+                          "record_count": 1117,
+                          "coverage": "Public zero-data-retention endpoint listing as reported by OpenRouter.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/zdr_endpoints.json",
+                          "sha256": "eaa0646d97c654dad34fcd8bc71d227dad379f63e21c37d7b38759aa535b0e0a",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/api/v1/endpoints/zdr",
+                              "collected_at": "2026-11-08T16:15:26.993Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/zdr_endpoints.json",
+                              "sha256": "eaa0646d97c654dad34fcd8bc71d227dad379f63e21c37d7b38759aa535b0e0a"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "model_count",
+                          "source_url": "https://openrouter.ai/api/v1/models/count?output_modalities=all",
+                          "collected_at": "2026-11-08T16:15:26.899Z",
+                          "status": "ok",
+                          "record_count": 1,
+                          "coverage": "All-modality model count at its own request time; requests are not an atomic upstream transaction.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/model_count.json",
+                          "sha256": "bda5a5bc8fb764317ce3e9d5aea8a181fffa48e378d1b2a62e6207c6f4567c6f",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/api/v1/models/count?output_modalities=all",
+                              "collected_at": "2026-11-08T16:15:26.899Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/model_count.json",
+                              "sha256": "bda5a5bc8fb764317ce3e9d5aea8a181fffa48e378d1b2a62e6207c6f4567c6f"
+                            }
+                          ],
+                          "catalogue_count": 705,
+                          "count_matches_catalogue": true
+                        },
+                        {
+                          "id": "model_rss",
+                          "source_url": "https://openrouter.ai/api/v1/models?use_rss=true&output_modalities=all",
+                          "collected_at": "2026-11-08T16:15:27.068Z",
+                          "status": "ok",
+                          "record_count": 705,
+                          "coverage": "Official current model feed window. Item publication time is upstream time, not collection time.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/model_rss.xml",
+                          "sha256": "27244acf922b266ba5b252f4c0f78ba23419f8afd24af804c2afd1ad534eb71c",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/api/v1/models?use_rss=true&output_modalities=all",
+                              "collected_at": "2026-11-08T16:15:27.068Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/model_rss.xml",
+                              "sha256": "27244acf922b266ba5b252f4c0f78ba23419f8afd24af804c2afd1ad534eb71c"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "blog_posts",
+                          "source_url": "https://openrouter.ai/blog/feed.xml",
+                          "collected_at": "2026-11-08T16:15:27.164Z",
+                          "status": "ok",
+                          "record_count": 166,
+                          "coverage": "Official blog RSS feed window, not a reconstruction of every historical blog version.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/blog_posts.xml",
+                          "sha256": "3313fb9b9ae0d345cb7db0e11c35d6a4bd5ca736bc0fe1528c7d327ef9298fc7",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/blog/feed.xml",
+                              "collected_at": "2026-11-08T16:15:27.164Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/blog_posts.xml",
+                              "sha256": "3313fb9b9ae0d345cb7db0e11c35d6a4bd5ca736bc0fe1528c7d327ef9298fc7"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "status_incidents",
+                          "source_url": "https://status.openrouter.ai/history.rss",
+                          "collected_at": "2026-11-08T16:15:27.732Z",
+                          "status": "ok",
+                          "record_count": 6,
+                          "coverage": "Official incident RSS bounded window. Absence of an item does not prove absence of an incident.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/status_incidents.xml",
+                          "sha256": "6b5262a55514995c18c3f643a95763ff2c9e8ef6f4476de359709d43bd662ae0",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://status.openrouter.ai/history.rss",
+                              "collected_at": "2026-11-08T16:15:27.732Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/status_incidents.xml",
+                              "sha256": "6b5262a55514995c18c3f643a95763ff2c9e8ef6f4476de359709d43bd662ae0"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "upstream_openapi",
+                          "source_url": "https://openrouter.ai/openapi.json",
+                          "collected_at": "2026-11-08T16:15:28.701Z",
+                          "status": "ok",
+                          "record_count": 1,
+                          "coverage": "Original official OpenAPI document, including authenticated operations that this collector does not execute.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/upstream_openapi.json",
+                          "sha256": "a698ac85ec9c7ae8bfa6add30d28e5f95c6b042ac547450e30ff6940ef6e5bd4",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/openapi.json",
+                              "collected_at": "2026-11-08T16:15:28.701Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/upstream_openapi.json",
+                              "sha256": "a698ac85ec9c7ae8bfa6add30d28e5f95c6b042ac547450e30ff6940ef6e5bd4"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "docs_index",
+                          "source_url": "https://openrouter.ai/docs/llms.txt",
+                          "collected_at": "2026-11-08T16:15:27.928Z",
+                          "status": "ok",
+                          "record_count": 1,
+                          "coverage": "Official documentation index; linked full documentation pages are not recursively downloaded.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/docs_index.txt",
+                          "sha256": "12bfb33782ab57758c234c9cc1cf3d7ff6b72ea9e779c468285f2dc7c95b00a4",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/docs/llms.txt",
+                              "collected_at": "2026-11-08T16:15:27.928Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/docs_index.txt",
+                              "sha256": "12bfb33782ab57758c234c9cc1cf3d7ff6b72ea9e779c468285f2dc7c95b00a4"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "site_index",
+                          "source_url": "https://openrouter.ai/llms.txt",
+                          "collected_at": "2026-11-08T16:15:28.250Z",
+                          "status": "ok",
+                          "record_count": 1,
+                          "coverage": "Official site language-model index; not every linked page or asset is archived.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/site_index.txt",
+                          "sha256": "d4a245533d423da423373f36946dbd33b11555994c68b70f6b3b591df5bb8645",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/llms.txt",
+                              "collected_at": "2026-11-08T16:15:28.250Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/site_index.txt",
+                              "sha256": "d4a245533d423da423373f36946dbd33b11555994c68b70f6b3b591df5bb8645"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "endpoints",
+                          "source_url": "https://openrouter.ai/api/v1/models/{model_id}/endpoints",
+                          "collected_at": "2026-11-08T16:15:57.131Z",
+                          "status": "ok",
+                          "record_count": 1776,
+                          "coverage": "Enumerated every model in this run's all-modality catalogue. Endpoint statistics/prices are observed values, not guaranteed service levels. Empty endpoint arrays are retained in raw responses.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/endpoints.ndjson",
+                          "sha256": "15161049a01fa0024263c3161924b2d77a369a13ef759a30d23d439b6ed5701b",
+                          "models_requested": 705,
+                          "models_succeeded": 705,
+                          "models_with_no_endpoints": 33,
+                          "request_started_at": "2026-11-08T16:15:28.736Z"
+                        },
+                        {
+                          "id": "image_endpoints",
+                          "source_url": "https://openrouter.ai/api/v1/images/models/{model_id}/endpoints",
+                          "collected_at": "2026-11-08T16:15:59.450Z",
+                          "status": "ok",
+                          "record_count": 67,
+                          "coverage": "Enumerated every model in this run's dedicated image catalogue. Endpoint statistics/prices are observed values, not guaranteed service levels. Empty endpoint arrays are retained in raw responses.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/image_endpoints.ndjson",
+                          "sha256": "aa1e330afb76ca15ef573e26d70070c421f0c1ef875a62e272a9278187068527",
+                          "models_requested": 63,
+                          "models_succeeded": 63,
+                          "models_with_no_endpoints": 1,
+                          "request_started_at": "2026-11-08T16:15:57.131Z"
+                        },
+                        {
+                          "id": "authenticated_data",
+                          "source_url": "https://openrouter.ai/api/v1/datasets/",
+                          "documentation_url": "https://openrouter.ai/docs/cookbook/administration/data-api",
+                          "collected_at": "2026-11-08T16:15:59.450Z",
+                          "status": "unavailable",
+                          "record_count": 0,
+                          "coverage": "Not collected: authenticated analytics/Data API (rankings, app rankings, benchmarks, session costs), account credits, keys, generations, private/provider-preference data, and usage records.",
+                          "unavailable": [
+                            "Requires authorized OpenRouter credentials and appropriate data usage rights. No credentials are requested or stored; no ranking or usage values are synthesized.",
+                            "The public catalogues do not expose a complete historical record of retired models, endpoint outages, requests, revenue or private/ZDR traffic.",
+                            "status.openrouter.ai/api/v2/summary.json returned HTTP 403 during source audit; only the public incident RSS window is collected."
+                          ],
+                          "errors": []
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown, repeated, malformed, mutually exclusive or dataset-inapplicable parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_QUERY",
+                    "message": "provider is not supported for type=models."
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route, exact snapshot or UTC collection date; no successful matching snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "SNAPSHOT_NOT_FOUND",
+                    "message": "No successful snapshot matches the selection; history starts with actual collection."
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method. Allow: GET, HEAD, OPTIONS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "METHOD_NOT_ALLOWED",
+                    "message": "Use GET or HEAD."
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Archive fetch/JSON failure (ARCHIVE_UNAVAILABLE) or schema, record-count or processing failure (INVALID_ARCHIVE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_ARCHIVE",
+                    "message": "Dataset failed schema or record-count validation."
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "NO_SUCCESSFUL_SNAPSHOT, FAILED_SNAPSHOT or DATASET_UNAVAILABLE. Last successful data remains retained; failures are not empty successes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "DATASET_UNAVAILABLE",
+                    "message": "This dataset was not successfully collected in this snapshot."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Latest source coverage",
+            "source": "curl \"https://openrouter-data.pages.dev/api/v1/datasets?date=latest\""
+          }
+        ]
+      }
+    },
+    "/api/v1/data": {
+      "get": {
+        "operationId": "queryData",
+        "summary": "Filter and paginate archived records",
+        "description": "Query parameters are strict: unknown names, duplicate keys and inapplicable filters return 400. Comma-separated values use OR within each field and AND across fields; exact filters are case insensitive and spaces are not trimmed. All results come from stored snapshots, with no live upstream query. Collection dates are UTC, distinct from model creation/publication dates. History begins with actual successful collection, with no invented backfill. A zero-match query on a successfully collected dataset is a valid empty result. dimension is rejected on this endpoint. Failed selected attempts or unavailable selected datasets return 503.",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "One collected row dataset. upstream_openapi is a single row containing the entire official OpenAPI JSON object; docs_index/site_index each contain one {text:string} row. All 16 datasets can be queried; source metadata remains in the manifest.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "models",
+                "providers",
+                "endpoints",
+                "embedding_models",
+                "eu_models",
+                "zdr_endpoints",
+                "model_count",
+                "model_rss",
+                "status_incidents",
+                "image_models",
+                "video_models",
+                "image_endpoints",
+                "blog_posts",
+                "upstream_openapi",
+                "docs_index",
+                "site_index"
+              ],
+              "default": "models"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "description": "UTC collection date or latest. Resolves to the latest successful run on that exact date, not a nearest-date fallback. Mutually exclusive with snapshot.",
+            "schema": {
+              "oneOf": [
+                {
+                  "const": "latest"
+                },
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                }
+              ],
+              "default": "latest"
+            }
+          },
+          {
+            "name": "snapshot",
+            "in": "query",
+            "required": false,
+            "description": "Exact immutable run ID. Mutually exclusive with date. Failed attempts may be inspected through manifest/datasets; data/RSS/dimensions reject failed attempts with 503.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{6}Z-[a-z0-9]+$"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Case-insensitive substring across row identity, name, description and title. Empty matches all.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact model ID values; case insensitive. Valid for models, embedding_models, eu_models, image_models, video_models, endpoints, image_endpoints, zdr_endpoints.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact author slugs derived from the model ID prefix before /. Valid for models, embedding_models, eu_models, image_models, video_models, endpoints, image_endpoints, zdr_endpoints.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact provider names, slugs or tags; case insensitive. Valid only for providers, endpoints, image_endpoints, zdr_endpoints. Provider catalog rows use their own name/slug; endpoint rows use provider_name/provider_slug/provider_tag/tag. Model catalogs do not contain a reliable provider join; other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "input_modality",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact architecture.input_modalities values. Valid only for models, embedding_models, eu_models, image_models. Other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "output_modality",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact architecture.output_modalities values. Valid only for models, embedding_models, eu_models, image_models. Other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "parameter",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact supported parameter names, from array values or object keys. Valid only for models, embedding_models, eu_models, image_models, endpoints, image_endpoints, zdr_endpoints. Other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "min_context",
+            "in": "query",
+            "required": false,
+            "description": "Minimum context_length in tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Missing/non-numeric fields do not match. Decimal integer notation only.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000000000
+            }
+          },
+          {
+            "name": "max_prompt_price",
+            "in": "query",
+            "required": false,
+            "description": "Maximum pricing.prompt in USD per token, NOT per million tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Decimal notation without sign or exponent. Missing/null prices do not match. Does not interpret image endpoint price arrays or video SKU prices.",
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            }
+          },
+          {
+            "name": "free",
+            "in": "query",
+            "required": false,
+            "description": "Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. true requires numeric prompt and completion prices both zero; false requires both present and at least one nonzero. Unknown prices are neither free nor paid.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "description": "Sort field. Numbers sort numerically, missing values last in either direction. Identity is the ascending tie-breaker. Record identity uses model_id, id, slug, name, guid, then link.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "id",
+                "name",
+                "created",
+                "context_length",
+                "pricing.prompt"
+              ],
+              "default": "id"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "description": "Primary sort direction.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; decimal integer notation only.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of filtered/ordered rows or buckets to skip; zero based.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000000,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataEnvelope"
+                },
+                "examples": {
+                  "actualFirstSync": {
+                    "summary": "Actual successful archive 2026-11-08T161526Z-89198e08b6",
+                    "description": "Captured from the implemented handler using actual archived files. Request: /api/v1/data?type=models&snapshot=2026-11-08T161526Z-89198e08b6&model=openai%2Fgpt-4o&limit=1. Historical freshness metadata describes example capture time.",
+                    "value": {
+                      "meta": {
+                        "schema_version": 1,
+                        "snapshot": "2026-11-08T161526Z-89198e08b6",
+                        "date": "2026-11-08",
+                        "collected_at": "2026-11-08T16:15:59.450Z",
+                        "status": "success",
+                        "last_success": "2026-11-08T161526Z-89198e08b6",
+                        "latest_attempt_status": "success",
+                        "stale": false,
+                        "coverage": {
+                          "id": "models",
+                          "source_url": "https://openrouter.ai/api/v1/models?output_modalities=all",
+                          "collected_at": "2026-11-08T16:15:26.768Z",
+                          "status": "ok",
+                          "record_count": 705,
+                          "coverage": "All output modalities explicitly requested; public currently listed models, not retired or private models.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/models.json",
+                          "sha256": "bde879fe7d252fc27654751c099de033cb14c173376d53d12bf4ca7667acde73",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/api/v1/models?output_modalities=all",
+                              "collected_at": "2026-11-08T16:15:26.768Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/models.json",
+                              "sha256": "bde879fe7d252fc27654751c099de033cb14c173376d53d12bf4ca7667acde73"
+                            }
+                          ]
+                        }
+                      },
+                      "data": [
+                        {
+                          "id": "openai/gpt-4o",
+                          "canonical_slug": "openai/gpt-4o",
+                          "hugging_face_id": null,
+                          "name": "OpenAI: GPT-4o",
+                          "created": 1715558400,
+                          "description": "GPT-4o (\"o\" for \"omni\") is OpenAI's latest AI model, supporting both text and image inputs with text outputs. It maintains the intelligence level of [GPT-4 Turbo](/models/openai/gpt-4-turbo) while being twice as...",
+                          "context_length": 128000,
+                          "architecture": {
+                            "modality": "text+image+file->text",
+                            "input_modalities": [
+                              "text",
+                              "image",
+                              "file"
+                            ],
+                            "output_modalities": [
+                              "text"
+                            ],
+                            "tokenizer": "GPT",
+                            "instruct_type": null
+                          },
+                          "pricing": {
+                            "prompt": "0.0000025",
+                            "completion": "0.00001",
+                            "input_cache_read": "0.00000125"
+                          },
+                          "top_provider": {
+                            "context_length": 128000,
+                            "max_completion_tokens": 16384,
+                            "is_moderated": true
+                          },
+                          "per_request_limits": null,
+                          "supported_parameters": [
+                            "frequency_penalty",
+                            "logit_bias",
+                            "logprobs",
+                            "max_completion_tokens",
+                            "max_tokens",
+                            "prediction",
+                            "presence_penalty",
+                            "response_format",
+                            "seed",
+                            "stop",
+                            "structured_outputs",
+                            "temperature",
+                            "tool_choice",
+                            "tools",
+                            "top_logprobs",
+                            "top_p",
+                            "web_search_options"
+                          ],
+                          "default_parameters": {},
+                          "supported_voices": null,
+                          "knowledge_cutoff": "2023-10-31",
+                          "expiration_date": null,
+                          "links": {
+                            "details": "/api/v1/models/openai/gpt-4o/endpoints"
+                          },
+                          "endpoints": [
+                            "/api/v1/chat/completions",
+                            "/api/v1/completions",
+                            "/api/v1/messages",
+                            "/api/v1/responses"
+                          ],
+                          "benchmarks": {
+                            "design_arena": [
+                              {
+                                "arena": "models",
+                                "category": "3d",
+                                "elo": 862,
+                                "win_rate": 39.2,
+                                "rank": 128
+                              },
+                              {
+                                "arena": "models",
+                                "category": "codecategories",
+                                "elo": 857,
+                                "win_rate": 34.8,
+                                "rank": 141
+                              },
+                              {
+                                "arena": "models",
+                                "category": "dataviz",
+                                "elo": 858,
+                                "win_rate": 36,
+                                "rank": 134
+                              },
+                              {
+                                "arena": "models",
+                                "category": "gamedev",
+                                "elo": 903,
+                                "win_rate": 42.3,
+                                "rank": 137
+                              },
+                              {
+                                "arena": "models",
+                                "category": "uicomponent",
+                                "elo": 880,
+                                "win_rate": 38.1,
+                                "rank": 135
+                              },
+                              {
+                                "arena": "models",
+                                "category": "website",
+                                "elo": 829,
+                                "win_rate": 31.5,
+                                "rank": 147
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "pagination": {
+                        "total": 1,
+                        "limit": 1,
+                        "offset": 0,
+                        "has_more": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown, repeated, malformed, mutually exclusive or dataset-inapplicable parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_QUERY",
+                    "message": "provider is not supported for type=models."
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route, exact snapshot or UTC collection date; no successful matching snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "SNAPSHOT_NOT_FOUND",
+                    "message": "No successful snapshot matches the selection; history starts with actual collection."
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method. Allow: GET, HEAD, OPTIONS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "METHOD_NOT_ALLOWED",
+                    "message": "Use GET or HEAD."
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Archive fetch/JSON failure (ARCHIVE_UNAVAILABLE) or schema, record-count or processing failure (INVALID_ARCHIVE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_ARCHIVE",
+                    "message": "Dataset failed schema or record-count validation."
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "NO_SUCCESSFUL_SNAPSHOT, FAILED_SNAPSHOT or DATASET_UNAVAILABLE. Last successful data remains retained; failures are not empty successes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "DATASET_UNAVAILABLE",
+                    "message": "This dataset was not successfully collected in this snapshot."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "All model modalities",
+            "source": "curl \"https://openrouter-data.pages.dev/api/v1/data?type=models&limit=20&offset=0\""
+          },
+          {
+            "lang": "Shell",
+            "label": "Multiple authors, image input, tools, context and price",
+            "source": "curl \"https://openrouter-data.pages.dev/api/v1/data?type=models&author=openai,anthropic&input_modality=image&parameter=tools&min_context=128000&max_prompt_price=0.00001&sort=pricing.prompt&order=asc&limit=10\""
+          },
+          {
+            "lang": "Shell",
+            "label": "Provider-specific endpoint query",
+            "source": "curl \"https://openrouter-data.pages.dev/api/v1/data?type=endpoints&provider=OpenAI&model=openai%2Fgpt-4o&limit=10\""
+          },
+          {
+            "lang": "Shell",
+            "label": "Exact real archived snapshot",
+            "source": "curl \"https://openrouter-data.pages.dev/api/v1/data?type=models&snapshot=2026-11-08T161526Z-89198e08b6&output_modality=text&limit=5\""
+          },
+          {
+            "lang": "Shell",
+            "label": "Original upstream OpenAPI archive",
+            "source": "curl \"https://openrouter-data.pages.dev/api/v1/data?type=upstream_openapi&limit=1\""
+          }
+        ]
+      }
+    },
+    "/api/v1/dimensions": {
+      "get": {
+        "operationId": "queryDimensions",
+        "summary": "Count dimension values after filtering",
+        "description": "Query parameters are strict: unknown names, duplicate keys and inapplicable filters return 400. Comma-separated values use OR within each field and AND across fields; exact filters are case insensitive and spaces are not trimmed. All results come from stored snapshots, with no live upstream query. Collection dates are UTC, distinct from model creation/publication dates. History begins with actual successful collection, with no invented backfill. A zero-match query on a successfully collected dataset is a valid empty result. dimension is required. sort/order are rejected; buckets sort count descending, then value ascending. Each row contributes once per distinct value. Provider aliases are individual values, so bucket sums may exceed matched_records.",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "One collected row dataset. upstream_openapi is a single row containing the entire official OpenAPI JSON object; docs_index/site_index each contain one {text:string} row. All 16 datasets can be queried; source metadata remains in the manifest.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "models",
+                "providers",
+                "endpoints",
+                "embedding_models",
+                "eu_models",
+                "zdr_endpoints",
+                "model_count",
+                "model_rss",
+                "status_incidents",
+                "image_models",
+                "video_models",
+                "image_endpoints",
+                "blog_posts",
+                "upstream_openapi",
+                "docs_index",
+                "site_index"
+              ],
+              "default": "models"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "description": "UTC collection date or latest. Resolves to the latest successful run on that exact date, not a nearest-date fallback. Mutually exclusive with snapshot.",
+            "schema": {
+              "oneOf": [
+                {
+                  "const": "latest"
+                },
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                }
+              ],
+              "default": "latest"
+            }
+          },
+          {
+            "name": "snapshot",
+            "in": "query",
+            "required": false,
+            "description": "Exact immutable run ID. Mutually exclusive with date. Failed attempts may be inspected through manifest/datasets; data/RSS/dimensions reject failed attempts with 503.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{6}Z-[a-z0-9]+$"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Case-insensitive substring across row identity, name, description and title. Empty matches all.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact model ID values; case insensitive. Valid for models, embedding_models, eu_models, image_models, video_models, endpoints, image_endpoints, zdr_endpoints.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact author slugs derived from the model ID prefix before /. Valid for models, embedding_models, eu_models, image_models, video_models, endpoints, image_endpoints, zdr_endpoints.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact provider names, slugs or tags; case insensitive. Valid only for providers, endpoints, image_endpoints, zdr_endpoints. Provider catalog rows use their own name/slug; endpoint rows use provider_name/provider_slug/provider_tag/tag. Model catalogs do not contain a reliable provider join; other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "input_modality",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact architecture.input_modalities values. Valid only for models, embedding_models, eu_models, image_models. Other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "output_modality",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact architecture.output_modalities values. Valid only for models, embedding_models, eu_models, image_models. Other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "parameter",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact supported parameter names, from array values or object keys. Valid only for models, embedding_models, eu_models, image_models, endpoints, image_endpoints, zdr_endpoints. Other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "min_context",
+            "in": "query",
+            "required": false,
+            "description": "Minimum context_length in tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Missing/non-numeric fields do not match. Decimal integer notation only.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000000000
+            }
+          },
+          {
+            "name": "max_prompt_price",
+            "in": "query",
+            "required": false,
+            "description": "Maximum pricing.prompt in USD per token, NOT per million tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Decimal notation without sign or exponent. Missing/null prices do not match. Does not interpret image endpoint price arrays or video SKU prices.",
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            }
+          },
+          {
+            "name": "free",
+            "in": "query",
+            "required": false,
+            "description": "Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. true requires numeric prompt and completion prices both zero; false requires both present and at least one nonzero. Unknown prices are neither free nor paid.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "dimension",
+            "in": "query",
+            "required": true,
+            "description": "Required grouping dimension; dataset applicability is identical to the corresponding filter. Missing values are counted separately.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "author",
+                "provider",
+                "input_modality",
+                "output_modality",
+                "parameter"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; decimal integer notation only.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of filtered/ordered rows or buckets to skip; zero based.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000000,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DimensionEnvelope"
+                },
+                "examples": {
+                  "actualFirstSync": {
+                    "summary": "Actual successful archive 2026-11-08T161526Z-89198e08b6",
+                    "description": "Captured from the implemented handler using actual archived files. Request: /api/v1/dimensions?type=models&snapshot=2026-11-08T161526Z-89198e08b6&dimension=output_modality. Historical freshness metadata describes example capture time.",
+                    "value": {
+                      "meta": {
+                        "schema_version": 1,
+                        "snapshot": "2026-11-08T161526Z-89198e08b6",
+                        "date": "2026-11-08",
+                        "collected_at": "2026-11-08T16:15:59.450Z",
+                        "status": "success",
+                        "last_success": "2026-11-08T161526Z-89198e08b6",
+                        "latest_attempt_status": "success",
+                        "stale": false,
+                        "coverage": {
+                          "id": "models",
+                          "source_url": "https://openrouter.ai/api/v1/models?output_modalities=all",
+                          "collected_at": "2026-11-08T16:15:26.768Z",
+                          "status": "ok",
+                          "record_count": 705,
+                          "coverage": "All output modalities explicitly requested; public currently listed models, not retired or private models.",
+                          "unavailable": [],
+                          "errors": [],
+                          "raw_path": "raw/models.json",
+                          "sha256": "bde879fe7d252fc27654751c099de033cb14c173376d53d12bf4ca7667acde73",
+                          "http_status": 200,
+                          "pages": [
+                            {
+                              "source_url": "https://openrouter.ai/api/v1/models?output_modalities=all",
+                              "collected_at": "2026-11-08T16:15:26.768Z",
+                              "http_status": 200,
+                              "attempts": 1,
+                              "raw_path": "raw/models.json",
+                              "sha256": "bde879fe7d252fc27654751c099de033cb14c173376d53d12bf4ca7667acde73"
+                            }
+                          ]
+                        }
+                      },
+                      "data": [
+                        {
+                          "value": "text",
+                          "count": 461
+                        },
+                        {
+                          "value": "image",
+                          "count": 66
+                        },
+                        {
+                          "value": "embeddings",
+                          "count": 45
+                        },
+                        {
+                          "value": "speech",
+                          "count": 38
+                        },
+                        {
+                          "value": "decisions",
+                          "count": 35
+                        },
+                        {
+                          "value": "video",
+                          "count": 33
+                        },
+                        {
+                          "value": "transcription",
+                          "count": 30
+                        },
+                        {
+                          "value": "rerank",
+                          "count": 12
+                        },
+                        {
+                          "value": "audio",
+                          "count": 4
+                        }
+                      ],
+                      "pagination": {
+                        "total": 9,
+                        "matched_records": 705,
+                        "missing_count": 0,
+                        "limit": 100,
+                        "offset": 0,
+                        "has_more": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown, repeated, malformed, mutually exclusive or dataset-inapplicable parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_QUERY",
+                    "message": "provider is not supported for type=models."
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route, exact snapshot or UTC collection date; no successful matching snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "SNAPSHOT_NOT_FOUND",
+                    "message": "No successful snapshot matches the selection; history starts with actual collection."
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method. Allow: GET, HEAD, OPTIONS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "METHOD_NOT_ALLOWED",
+                    "message": "Use GET or HEAD."
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Archive fetch/JSON failure (ARCHIVE_UNAVAILABLE) or schema, record-count or processing failure (INVALID_ARCHIVE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_ARCHIVE",
+                    "message": "Dataset failed schema or record-count validation."
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "NO_SUCCESSFUL_SNAPSHOT, FAILED_SNAPSHOT or DATASET_UNAVAILABLE. Last successful data remains retained; failures are not empty successes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "DATASET_UNAVAILABLE",
+                    "message": "This dataset was not successfully collected in this snapshot."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Output modalities",
+            "source": "curl \"https://openrouter-data.pages.dev/api/v1/dimensions?type=models&dimension=output_modality\""
+          },
+          {
+            "lang": "Shell",
+            "label": "Provider values on long-context endpoints",
+            "source": "curl \"https://openrouter-data.pages.dev/api/v1/dimensions?type=endpoints&dimension=provider&min_context=128000&limit=50\""
+          }
+        ]
+      }
+    },
+    "/rss.xml": {
+      "get": {
+        "operationId": "getArchiveRss",
+        "summary": "Filtered independent archive RSS",
+        "description": "Query parameters are strict: unknown names, duplicate keys and inapplicable filters return 400. Comma-separated values use OR within each field and AND across fields; exact filters are case insensitive and spaces are not trimmed. All results come from stored snapshots, with no live upstream query. Collection dates are UTC, distinct from model creation/publication dates. History begins with actual successful collection, with no invented backfill. A zero-match query on a successfully collected dataset is a valid empty result. Same data selectors/filters/sort, with maximum limit=100; dimension is rejected. This independently titled feed carries source and snapshot attribution, XML-escaped fields, and a stable per-run item guid under this service origin (snapshot + dataset + source-row position). pubDate uses original row pubDate/published_at, otherwise numeric model created, otherwise snapshot completion, falling back on snapshot completion if the date is invalid. This feed does not redirect to or claim ownership of the official RSS.",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "One collected row dataset. upstream_openapi is a single row containing the entire official OpenAPI JSON object; docs_index/site_index each contain one {text:string} row. All 16 datasets can be queried; source metadata remains in the manifest.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "models",
+                "providers",
+                "endpoints",
+                "embedding_models",
+                "eu_models",
+                "zdr_endpoints",
+                "model_count",
+                "model_rss",
+                "status_incidents",
+                "image_models",
+                "video_models",
+                "image_endpoints",
+                "blog_posts",
+                "upstream_openapi",
+                "docs_index",
+                "site_index"
+              ],
+              "default": "models"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "description": "UTC collection date or latest. Resolves to the latest successful run on that exact date, not a nearest-date fallback. Mutually exclusive with snapshot.",
+            "schema": {
+              "oneOf": [
+                {
+                  "const": "latest"
+                },
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                }
+              ],
+              "default": "latest"
+            }
+          },
+          {
+            "name": "snapshot",
+            "in": "query",
+            "required": false,
+            "description": "Exact immutable run ID. Mutually exclusive with date. Failed attempts may be inspected through manifest/datasets; data/RSS/dimensions reject failed attempts with 503.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{6}Z-[a-z0-9]+$"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Case-insensitive substring across row identity, name, description and title. Empty matches all.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact model ID values; case insensitive. Valid for models, embedding_models, eu_models, image_models, video_models, endpoints, image_endpoints, zdr_endpoints.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact author slugs derived from the model ID prefix before /. Valid for models, embedding_models, eu_models, image_models, video_models, endpoints, image_endpoints, zdr_endpoints.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact provider names, slugs or tags; case insensitive. Valid only for providers, endpoints, image_endpoints, zdr_endpoints. Provider catalog rows use their own name/slug; endpoint rows use provider_name/provider_slug/provider_tag/tag. Model catalogs do not contain a reliable provider join; other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "input_modality",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact architecture.input_modalities values. Valid only for models, embedding_models, eu_models, image_models. Other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "output_modality",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact architecture.output_modalities values. Valid only for models, embedding_models, eu_models, image_models. Other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "parameter",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated exact supported parameter names, from array values or object keys. Valid only for models, embedding_models, eu_models, image_models, endpoints, image_endpoints, zdr_endpoints. Other datasets return 400.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "min_context",
+            "in": "query",
+            "required": false,
+            "description": "Minimum context_length in tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Missing/non-numeric fields do not match. Decimal integer notation only.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000000000
+            }
+          },
+          {
+            "name": "max_prompt_price",
+            "in": "query",
+            "required": false,
+            "description": "Maximum pricing.prompt in USD per token, NOT per million tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Decimal notation without sign or exponent. Missing/null prices do not match. Does not interpret image endpoint price arrays or video SKU prices.",
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            }
+          },
+          {
+            "name": "free",
+            "in": "query",
+            "required": false,
+            "description": "Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. true requires numeric prompt and completion prices both zero; false requires both present and at least one nonzero. Unknown prices are neither free nor paid.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "description": "Sort field. Numbers sort numerically, missing values last in either direction. Identity is the ascending tie-breaker. Record identity uses model_id, id, slug, name, guid, then link.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "id",
+                "name",
+                "created",
+                "context_length",
+                "pricing.prompt"
+              ],
+              "default": "id"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "description": "Primary sort direction.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "RSS page size; maximum 100. Use offset for subsequent pages.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of filtered/ordered rows or buckets to skip; zero based.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000000,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RSS 2.0 XML.",
+            "content": {
+              "application/rss+xml": {
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "actualFirstSync": {
+                    "summary": "Actual successful archive 2026-11-08T161526Z-89198e08b6",
+                    "description": "Captured from the implemented handler using actual archived files. Request: /rss.xml?type=model_count&snapshot=2026-11-08T161526Z-89198e08b6&limit=1. Historical freshness metadata describes example capture time.",
+                    "value": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\"><channel><title>OpenRouter Data Archive — model_count</title><link>https://openrouter-data.pages.dev</link><description>Independent snapshot archive; source: https://openrouter.ai/api/v1/models/count?output_modalities=all; snapshot 2026-11-08T161526Z-89198e08b6. Not operated by OpenRouter.</description><lastBuildDate>Sun, 08 Nov 2026 16:15:59 GMT</lastBuildDate><atom:link href=\"https://openrouter-data.pages.dev/rss.xml?type=model_count&amp;snapshot=2026-11-08T161526Z-89198e08b6&amp;limit=1\" rel=\"self\" type=\"application/rss+xml\"/><item><title></title><link>https://openrouter-data.pages.dev/api/v1/data?type=model_count&amp;snapshot=2026-11-08T161526Z-89198e08b6</link><guid isPermaLink=\"false\">https://openrouter-data.pages.dev/snapshots/2026-11-08T161526Z-89198e08b6/model_count/0</guid><pubDate>Sun, 08 Nov 2026 16:15:59 GMT</pubDate><description>{&quot;count&quot;:705}</description><category>model_count</category></item></channel></rss>"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown, repeated, malformed, mutually exclusive or dataset-inapplicable parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_QUERY",
+                    "message": "provider is not supported for type=models."
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route, exact snapshot or UTC collection date; no successful matching snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "SNAPSHOT_NOT_FOUND",
+                    "message": "No successful snapshot matches the selection; history starts with actual collection."
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method. Allow: GET, HEAD, OPTIONS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "METHOD_NOT_ALLOWED",
+                    "message": "Use GET or HEAD."
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Archive fetch/JSON failure (ARCHIVE_UNAVAILABLE) or schema, record-count or processing failure (INVALID_ARCHIVE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_ARCHIVE",
+                    "message": "Dataset failed schema or record-count validation."
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "NO_SUCCESSFUL_SNAPSHOT, FAILED_SNAPSHOT or DATASET_UNAVAILABLE. Last successful data remains retained; failures are not empty successes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "DATASET_UNAVAILABLE",
+                    "message": "This dataset was not successfully collected in this snapshot."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Filtered models RSS",
+            "source": "curl \"https://openrouter-data.pages.dev/rss.xml?type=models&author=openai,anthropic&output_modality=text&limit=20\""
+          }
+        ]
+      }
+    },
+    "/docs/api/openapi.json": {
+      "get": {
+        "operationId": "getOpenApi",
+        "summary": "Read this service OpenAPI",
+        "description": "No query parameters. Returns this OpenAPI 3.1 document; distinct from the archived official OpenRouter specification.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "openapi",
+                    "info",
+                    "paths"
+                  ],
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "liveSpecification": {
+                    "summary": "Full service specification",
+                    "description": "The complete document is referenced externally to avoid recursive example embedding.",
+                    "externalValue": "https://openrouter-data.pages.dev/docs/api/openapi.json"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown, repeated, malformed, mutually exclusive or dataset-inapplicable parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_QUERY",
+                    "message": "provider is not supported for type=models."
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route, exact snapshot or UTC collection date; no successful matching snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "SNAPSHOT_NOT_FOUND",
+                    "message": "No successful snapshot matches the selection; history starts with actual collection."
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method. Allow: GET, HEAD, OPTIONS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "METHOD_NOT_ALLOWED",
+                    "message": "Use GET or HEAD."
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Archive fetch/JSON failure (ARCHIVE_UNAVAILABLE) or schema, record-count or processing failure (INVALID_ARCHIVE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_ARCHIVE",
+                    "message": "Dataset failed schema or record-count validation."
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "NO_SUCCESSFUL_SNAPSHOT, FAILED_SNAPSHOT or DATASET_UNAVAILABLE. Last successful data remains retained; failures are not empty successes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "DATASET_UNAVAILABLE",
+                    "message": "This dataset was not successfully collected in this snapshot."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Service contract",
+            "source": "curl \"https://openrouter-data.pages.dev/docs/api/openapi.json\""
+          }
+        ]
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "operationId": "getOpenApiAlias",
+        "summary": "Read the service OpenAPI alias",
+        "description": "No query parameters. Same JSON document as /docs/api/openapi.json.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "openapi",
+                    "info",
+                    "paths"
+                  ],
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "liveSpecification": {
+                    "summary": "Full service specification",
+                    "description": "The complete document is referenced externally to avoid recursive example embedding.",
+                    "externalValue": "https://openrouter-data.pages.dev/docs/api/openapi.json"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown, repeated, malformed, mutually exclusive or dataset-inapplicable parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_QUERY",
+                    "message": "provider is not supported for type=models."
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route, exact snapshot or UTC collection date; no successful matching snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "SNAPSHOT_NOT_FOUND",
+                    "message": "No successful snapshot matches the selection; history starts with actual collection."
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method. Allow: GET, HEAD, OPTIONS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "METHOD_NOT_ALLOWED",
+                    "message": "Use GET or HEAD."
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Archive fetch/JSON failure (ARCHIVE_UNAVAILABLE) or schema, record-count or processing failure (INVALID_ARCHIVE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_ARCHIVE",
+                    "message": "Dataset failed schema or record-count validation."
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "NO_SUCCESSFUL_SNAPSHOT, FAILED_SNAPSHOT or DATASET_UNAVAILABLE. Last successful data remains retained; failures are not empty successes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "DATASET_UNAVAILABLE",
+                    "message": "This dataset was not successfully collected in this snapshot."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Service contract alias",
+            "source": "curl \"https://openrouter-data.pages.dev/openapi.json\""
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DatasetId": {
+        "type": "string",
+        "enum": [
+          "models",
+          "providers",
+          "endpoints",
+          "embedding_models",
+          "eu_models",
+          "zdr_endpoints",
+          "model_count",
+          "model_rss",
+          "status_incidents",
+          "image_models",
+          "video_models",
+          "image_endpoints",
+          "blog_posts",
+          "upstream_openapi",
+          "docs_index",
+          "site_index"
+        ]
+      },
+      "SnapshotId": {
+        "type": "string",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{6}Z-[a-z0-9]+$"
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Machine-readable code."
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable explanation."
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "DatasetReport": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Dataset/source identifier. Also used for explicit unavailable-source reports."
+          },
+          "source_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "documentation_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "collected_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "failed",
+              "unavailable"
+            ]
+          },
+          "record_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "coverage": {
+            "type": "string",
+            "description": "Actual source scope and completeness limitations."
+          },
+          "unavailable": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Content explicitly not obtained."
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Observed retrieval or validation failure."
+            }
+          },
+          "raw_path": {
+            "type": "string",
+            "description": "Original body relative archive path, when saved."
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "http_status": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          }
+        },
+        "required": [
+          "id",
+          "source_url",
+          "collected_at",
+          "status",
+          "record_count",
+          "coverage",
+          "unavailable",
+          "errors"
+        ],
+        "additionalProperties": true,
+        "description": "Actual source provenance for one run. Unknown source/report fields are preserved. Unavailable/failed source reports do not imply successful empty data."
+      },
+      "SnapshotSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/SnapshotId"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failed"
+            ]
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "started_at",
+          "completed_at",
+          "status",
+          "counts",
+          "errors"
+        ],
+        "additionalProperties": false
+      },
+      "Manifest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/SnapshotId"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failed"
+            ]
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "schema_version": {
+            "const": 1
+          },
+          "datasets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DatasetReport"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "started_at",
+          "completed_at",
+          "status",
+          "counts",
+          "errors",
+          "schema_version",
+          "datasets"
+        ],
+        "additionalProperties": false
+      },
+      "Meta": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/SnapshotId"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "collected_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failed"
+            ]
+          },
+          "last_success": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SnapshotId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latest_attempt_status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "success",
+              "failed",
+              null
+            ]
+          },
+          "stale": {
+            "type": "boolean",
+            "description": "True if no last successful run or its completion is more than 36 hours old. A failed latest attempt can degrade health even while stale is false."
+          },
+          "coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DatasetReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "snapshot",
+          "date",
+          "collected_at",
+          "status",
+          "last_success",
+          "latest_attempt_status",
+          "stale",
+          "coverage"
+        ],
+        "additionalProperties": false
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "has_more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "total",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "additionalProperties": false
+      },
+      "DimensionPagination": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of distinct dimension buckets after filtering."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "matched_records": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of filtered source rows before bucket pagination."
+          },
+          "missing_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Filtered rows lacking any value for this dimension. Values are deduplicated per row; multiple values can make bucket counts sum above matched_records."
+          }
+        },
+        "required": [
+          "total",
+          "limit",
+          "offset",
+          "has_more",
+          "matched_records",
+          "missing_count"
+        ],
+        "additionalProperties": false
+      },
+      "RawRow": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Original upstream row fields, nulls and unknown future fields are preserved. Flattened endpoints retain model_id. model_count has one {count} row; upstream_openapi has one entire official specification object; docs_index/site_index have one {text} row each."
+      },
+      "Pricing": {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "description": "Upstream prices. Model prompt/completion are USD per token decimal strings, not USD per million tokens. Other charge keys retain upstream meaning; missing is not zero."
+      },
+      "ModelRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "canonical_slug": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "created": {
+            "type": "integer",
+            "description": "Upstream Unix model creation time."
+          },
+          "context_length": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "architecture": {
+            "type": "object",
+            "properties": {
+              "input_modalities": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "output_modalities": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "modality": {
+                "type": "string"
+              },
+              "tokenizer": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "instruct_type": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": true
+          },
+          "pricing": {
+            "$ref": "#/components/schemas/Pricing"
+          },
+          "supported_parameters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "benchmarks": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": true
+      },
+      "ProviderRow": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "privacy_policy_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "terms_of_service_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status_page_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "headquarters": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "datacenters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "EndpointRow": {
+        "type": "object",
+        "properties": {
+          "model_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider_name": {
+            "type": "string"
+          },
+          "provider_slug": {
+            "type": "string"
+          },
+          "provider_tag": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          },
+          "context_length": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "pricing": {
+            "$ref": "#/components/schemas/Pricing"
+          },
+          "supported_parameters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "uptime_last_30m": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "uptime_last_5m": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "uptime_last_1d": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "latency_last_30m": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "throughput_last_30m": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [],
+        "additionalProperties": true,
+        "description": "Representative endpoints/zdr_endpoints row. Performance fields reflect short upstream windows, not complete historical measurements. null remains unknown."
+      },
+      "ParameterConstraint": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "enum",
+              "range"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {}
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": true
+      },
+      "ImageModelRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "created": {
+            "type": "integer"
+          },
+          "architecture": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "supported_parameters": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ParameterConstraint"
+            }
+          },
+          "supports_streaming": {
+            "type": "boolean"
+          },
+          "endpoints": {
+            "type": "string",
+            "description": "Official dedicated endpoints URL."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": true
+      },
+      "ImageEndpointRow": {
+        "type": "object",
+        "properties": {
+          "model_id": {
+            "type": "string"
+          },
+          "provider_name": {
+            "type": "string"
+          },
+          "provider_slug": {
+            "type": "string"
+          },
+          "provider_tag": {
+            "type": "string"
+          },
+          "supported_parameters": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ParameterConstraint"
+            }
+          },
+          "allowed_passthrough_parameters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "supports_streaming": {
+            "type": "boolean"
+          },
+          "pricing": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "billable": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "cost_usd": {
+                  "type": "number"
+                }
+              },
+              "required": [],
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [],
+        "additionalProperties": true,
+        "description": "Dedicated image endpoint pricing retains billable+unit; these rows do not imply a prompt/completion USD/token pair."
+      },
+      "VideoModelRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "canonical_slug": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created": {
+            "type": "integer"
+          },
+          "supported_resolutions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "supported_aspect_ratios": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "supported_sizes": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "supported_durations": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "supported_frame_images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "generate_audio": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "seed": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "pricing_skus": {
+            "type": "object",
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": true,
+        "description": "Video capabilities and original SKU price units; not a text-token price table."
+      },
+      "RssRow": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          },
+          "guid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "#text": {
+                    "type": "string"
+                  },
+                  "@_isPermaLink": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": true
+              }
+            ],
+            "description": "Original parsed XML guid; attribute-bearing values retain #text and @_isPermaLink."
+          },
+          "description": {
+            "type": "string"
+          },
+          "pubDate": {
+            "type": "string",
+            "description": "Original upstream RSS publication date."
+          },
+          "published_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [],
+        "additionalProperties": true,
+        "description": "Parsed fields from models/blog/status RSS. A current feed window is not complete publication or incident history."
+      },
+      "ModelCountRow": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "additionalProperties": true
+      },
+      "DataEnvelope": {
+        "type": "object",
+        "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ModelRow"
+                },
+                {
+                  "$ref": "#/components/schemas/ProviderRow"
+                },
+                {
+                  "$ref": "#/components/schemas/EndpointRow"
+                },
+                {
+                  "$ref": "#/components/schemas/ImageModelRow"
+                },
+                {
+                  "$ref": "#/components/schemas/ImageEndpointRow"
+                },
+                {
+                  "$ref": "#/components/schemas/VideoModelRow"
+                },
+                {
+                  "$ref": "#/components/schemas/RssRow"
+                },
+                {
+                  "$ref": "#/components/schemas/ModelCountRow"
+                },
+                {
+                  "$ref": "#/components/schemas/UpstreamOpenApiRow"
+                },
+                {
+                  "$ref": "#/components/schemas/TextDocumentRow"
+                }
+              ],
+              "description": "Shape depends on type; all extra upstream properties and nulls are retained. See x-dataset-schemas mapping."
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "meta",
+          "data",
+          "pagination"
+        ],
+        "additionalProperties": false,
+        "x-dataset-schemas": {
+          "models": "ModelRow",
+          "embedding_models": "ModelRow",
+          "eu_models": "ModelRow",
+          "providers": "ProviderRow",
+          "endpoints": "EndpointRow",
+          "zdr_endpoints": "EndpointRow",
+          "image_models": "ImageModelRow",
+          "image_endpoints": "ImageEndpointRow",
+          "video_models": "VideoModelRow",
+          "model_rss": "RssRow",
+          "blog_posts": "RssRow",
+          "status_incidents": "RssRow",
+          "model_count": "ModelCountRow",
+          "upstream_openapi": "UpstreamOpenApiRow",
+          "docs_index": "TextDocumentRow",
+          "site_index": "TextDocumentRow"
+        }
+      },
+      "DimensionEnvelope": {
+        "type": "object",
+        "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "value",
+                "count"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/DimensionPagination"
+          }
+        },
+        "required": [
+          "meta",
+          "data",
+          "pagination"
+        ],
+        "additionalProperties": false
+      },
+      "ManifestEnvelope": {
+        "type": "object",
+        "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Manifest"
+          }
+        },
+        "required": [
+          "meta",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "DatasetsEnvelope": {
+        "type": "object",
+        "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DatasetReport"
+            }
+          }
+        },
+        "required": [
+          "meta",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "SnapshotsEnvelope": {
+        "type": "object",
+        "properties": {
+          "meta": {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": 1
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "last_success": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/SnapshotId"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "schema_version",
+              "updated_at",
+              "last_success"
+            ],
+            "additionalProperties": false
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotSummary"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "meta",
+          "data",
+          "pagination"
+        ],
+        "additionalProperties": false
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded",
+              "unavailable"
+            ]
+          },
+          "last_success": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SnapshotId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latest_attempt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SnapshotSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "last_success",
+          "latest_attempt",
+          "stale",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "ServiceInfo": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "independent_service": {
+            "const": true
+          },
+          "repository": {
+            "type": "string",
+            "format": "uri"
+          },
+          "openapi": {
+            "type": "string",
+            "format": "uri"
+          },
+          "data": {
+            "type": "string",
+            "format": "uri"
+          },
+          "rss": {
+            "type": "string",
+            "format": "uri"
+          },
+          "sources": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "independent_service",
+          "repository",
+          "openapi",
+          "data",
+          "rss",
+          "sources",
+          "description"
+        ],
+        "additionalProperties": false
+      },
+      "TextDocumentRow": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Exact official UTF-8 llms.txt body."
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "UpstreamOpenApiRow": {
+        "type": "object",
+        "properties": {
+          "openapi": {
+            "type": "string"
+          },
+          "info": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "paths": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "openapi",
+          "info",
+          "paths"
+        ],
+        "additionalProperties": true,
+        "description": "Entire original official OpenRouter OpenAPI JSON document as one row; distinct from this service specification."
+      }
+    }
+  }
+}
