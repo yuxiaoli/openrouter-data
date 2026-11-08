@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { queryRows } from '../src/query.js';
+import { queryRows, dimensions, Query } from '../src/query.js';
 
 test('combines author, modalities, context and numeric price filters before stable pagination', () => {
   const rows = [
@@ -14,4 +14,15 @@ test('combines author, modalities, context and numeric price filters before stab
 test('comma-separated filters trim whitespace and include all selected authors', () => {
   const rows=[{id:'a/one'},{id:'b/two'},{id:'c/three'}];
   expect(queryRows(rows,new URLSearchParams('author=a,%20b')).data).toEqual(rows.slice(0,2));
+});
+
+test('provider aggregation uses one canonical slug while filters accept aliases',()=>{
+  const rows=[{model_id:'test/model',provider_name:'Example Host',provider_slug:'example-host',provider_tag:'example-host/turbo'}];
+  const query=Query.parse({provider:'Example Host',dimension:'provider'});
+  expect(dimensions(rows,query)).toMatchObject({data:[{value:'example-host',count:1}],total:1,matched_records:1});
+});
+
+test('RSS identity search reads the text of structured upstream GUIDs',()=>{
+  const rows=[{guid:{'#text':'https://upstream.test/post-1','@_isPermaLink':'true'},title:'Original title'}];
+  expect(queryRows(rows,new URLSearchParams('q=post-1')).data).toEqual(rows);
 });

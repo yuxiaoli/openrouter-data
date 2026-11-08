@@ -92,7 +92,7 @@ gh workflow run sync.yml --repo yuxiaoli/openrouter-data --ref main
 ```sh
 npm run check
 npm run build
-npx wrangler pages deploy dist --project-name openrouter-data --branch main --force
+npx wrangler pages deploy dist --project-name openrouter-data --branch main
 npm run smoke -- https://openrouter-data.pages.dev
 ```
 

@@ -4,6 +4,8 @@
 
 本项目是独立的历史归档和查询服务，非 OpenRouter 官方服务。下列官方 URL 均为上游来源，不能作为本项目部署地址。保留上游字段、未知字段和 null；没有取得的内容不补造，不将目录中的摘要、瞬时指标或排行榜次序当成完整历史数据。
 
+公开归档存在一项明确的保真例外：官方 OpenAPI 的凭据样例触发了 GitHub GH013 推送保护，包含该样例的首次数据推送未成功。项目不绕过保护，公开副本会对凭据样例进行明确标记的脱敏，并在采集报告中记录脱敏说明。报告中的上游原始响应 SHA-256 用于标识实际取得的响应；归档 SHA-256 用于校验公开保存的脱敏副本，二者可能不同，不得把脱敏后的字节描述成上游原始字节。模型目录、价格和其它业务数据不因这项处理而补造或推断。
+
 ## 建议每天归档的公开来源
 
 | 数据 | 官方 URL | 调查结果与覆盖范围 |
@@ -21,7 +23,7 @@
 | 官方模型 RSS | <https://openrouter.ai/api/v1/models?use_rss=true&output_modalities=all> | 200；RSS 2.0。原样存档作为官方 feed；项目自己的 RSS 应有独立 title/self link，注明来源和采集时间。 |
 | 官方博客 RSS | <https://openrouter.ai/blog/feed.xml> | 200；166 项。由官方博客 HTML 的 `rel=alternate` 链接确认。`/rss.xml`、`/blog/rss.xml` 和 `/announcements/rss.xml` 不是有效 feed（本次 404）。 |
 | 官方状态 RSS | <https://status.openrouter.ai/history.rss> | 200；6 项。保留 channel 的 lastBuildDate、原始 item 日期和链接；当前 feed 窗口不能宣称是全部事故历史。 |
-| 官方 OpenAPI | <https://openrouter.ai/openapi.json> | 200；约 2.96 MB；官方接口规格归档。须与本项目 `docs/api/openapi.json` 区分，后者只描述本项目真实实现的查询服务。 |
+| 官方 OpenAPI | <https://openrouter.ai/openapi.json> | 200；约 2.96 MB；官方接口规格归档，公开副本对凭据样例脱敏并保留说明及哈希。须与本项目 `docs/api/openapi.json` 区分，后者只描述本项目真实实现的查询服务。 |
 | 官方站点 AI 索引 | <https://openrouter.ai/llms.txt> | 200；text/markdown。属于文档索引，不是新增数据目录。 |
 | 官方文档索引 | <https://openrouter.ai/docs/llms.txt> | 200；text/plain。可归档 API 发现依据。 |
 

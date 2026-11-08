@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -81,5 +82,28 @@ describe('snapshot promotion', () => {
     expect(result.status).toBe('failed');
     expect(result.errors.join(' ')).toMatch(/empty aggregate endpoint/i);
     expect(result.datasets.find(dataset=>dataset.id==='endpoints')?.models_with_no_endpoints).toBe(1);
+  });
+
+  it('redacts credential-shaped upstream examples before writing public raw or normalized archives', async () => {
+    const output=await mkdtemp(join(tmpdir(),'openrouter-collector-'));
+    const fakePrefix=['sk','or','v1'].join('-')+'-';
+    const original=JSON.stringify({openapi:'3.1.0',paths:{'/test':{}},example:fakePrefix+'a'.repeat(64),nested:{example:fakePrefix+'b'.repeat(64)}});
+    const result=await collectSnapshot({output,retries:0,fetcher:async(input,init)=>
+      String(input)==='https://openrouter.ai/openapi.json'?new Response(original):fixtureFetch(input,init)});
+    expect(result.status).toBe('success');
+    const report=result.datasets.find(dataset=>dataset.id==='upstream_openapi')!;
+    expect(report.redactions).toMatchObject({count:2});
+    const raw=await readFile(join(output,'runs',result.id,report.raw_path!));
+    const normalized=await readFile(join(output,'runs',result.id,'upstream_openapi.json'),'utf8');
+    const pattern=new RegExp(fakePrefix+'[A-Za-z0-9_-]+');
+    expect(pattern.test(raw.toString('utf8'))).toBe(false);
+    expect(pattern.test(normalized)).toBe(false);
+    expect(report.sha256).toBe(createHash('sha256').update(raw).digest('hex'));
+    expect(report.original_sha256).toBe(createHash('sha256').update(original).digest('hex'));
+    expect(report.original_sha256===report.sha256).toBe(false);
+    expect(report.coverage).toMatch(/credential examples redacted for public publication/i);
+    const modelsReport=result.datasets.find(dataset=>dataset.id==='models')!;
+    const modelsRaw=await readFile(join(output,'runs',result.id,modelsReport.raw_path!),'utf8');
+    expect(modelsRaw).toBe(await (await fixtureFetch('https://openrouter.ai/api/v1/models?output_modalities=all')).text());
   });
 });

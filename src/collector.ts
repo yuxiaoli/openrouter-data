@@ -32,6 +32,21 @@ export const sources: Source[] = [
 ];
 
 const hash = (bytes:Uint8Array|string):string => createHash('sha256').update(bytes).digest('hex');
+const credentialRedaction = {
+  rule: 'sk-or-v1-[A-Za-z0-9_-]+',
+  reason: 'Credential-shaped upstream examples are removed before public publication.',
+  replacement: 'REDACTED_OPENROUTER_CREDENTIAL_EXAMPLE',
+};
+type Redactions = typeof credentialRedaction & {count:number};
+function redactForPublication(bytes:Uint8Array):{bytes:Uint8Array;original_sha256?:string;redactions?:Redactions} {
+  let count=0;
+  const text=new TextDecoder().decode(bytes).replace(new RegExp(credentialRedaction.rule,'g'),()=>{
+    count++;
+    return credentialRedaction.replacement;
+  });
+  if(count===0)return {bytes};
+  return {bytes:new TextEncoder().encode(text),original_sha256:hash(bytes),redactions:{...credentialRedaction,count}};
+}
 const message = (error:unknown):string => error instanceof Error ? error.message : String(error);
 const object = (value:unknown):value is Row => typeof value === 'object' && value !== null && !Array.isArray(value);
 const asRows = (value:unknown):Row[] => {
@@ -107,6 +122,7 @@ async function collectSource(source:Source,runDir:string,options:CollectOptions)
   const report:DatasetReport={id:source.id,source_url:source.url,collected_at:new Date().toISOString(),status:'ok',record_count:0,coverage:source.coverage,unavailable:[],errors:[]};
   const rows:Row[]=[];
   const pages:Row[]=[];
+  let redactionCount=0;
   try {
     let url:string|null=source.url;
     let totalCount:number|undefined;
@@ -118,14 +134,18 @@ async function collectSource(source:Source,runDir:string,options:CollectOptions)
       if(parsedUrl.pathname!==new URL(source.url).pathname) throw new Error('Unexpected upstream pagination path refused');
       seen.add(parsedUrl.href);
       const result=await download(parsedUrl.href,options);
+      // Unredacted response bodies remain in memory only; never write or encode them for publication.
+      const archived=redactForPublication(result.bytes);
+      redactionCount+=archived.redactions?.count??0;
       const extension=source.kind==='rss'?'xml':source.kind==='text'?'txt':'json';
       const rawPath=`raw/${source.id}${pages.length?`_page_${pages.length+1}`:''}.${extension}`;
-      await writeFile(join(runDir,rawPath),result.bytes);
-      const sha256=hash(result.bytes);
-      pages.push({source_url:result.url,collected_at:result.collected_at,http_status:result.status,attempts:result.attempts,raw_path:rawPath,sha256});
-      if(pages.length===1) Object.assign(report,{collected_at:result.collected_at,http_status:result.status,raw_path:rawPath,sha256});
+      await writeFile(join(runDir,rawPath),archived.bytes);
+      const sha256=hash(archived.bytes);
+      const redactionMetadata=archived.redactions?{original_sha256:archived.original_sha256,redactions:archived.redactions}:{};
+      pages.push({source_url:result.url,collected_at:result.collected_at,http_status:result.status,attempts:result.attempts,raw_path:rawPath,sha256,...redactionMetadata});
+      if(pages.length===1) Object.assign(report,{collected_at:result.collected_at,http_status:result.status,raw_path:rawPath,sha256,...redactionMetadata});
       if(result.status!==200) throw new Error(`HTTP ${result.status} from ${result.url}`);
-      const parsed=parseSource(source,result.bytes);
+      const parsed=parseSource(source,archived.bytes);
       if(parsed.totalCount!==undefined) {
         if(totalCount!==undefined && totalCount!==parsed.totalCount) throw new Error('Upstream total_count changed while paginating; snapshot is not complete');
         totalCount=parsed.totalCount;
@@ -144,6 +164,10 @@ async function collectSource(source:Source,runDir:string,options:CollectOptions)
   }
   report.record_count=rows.length;
   report.pages=pages;
+  if(redactionCount>0) {
+    report.redactions={...credentialRedaction,count:redactionCount};
+    report.coverage+=source.id==='upstream_openapi'?' Upstream specification credential examples redacted for public publication.':' Credential examples redacted for public publication.';
+  }
   await writeFile(join(runDir,`${source.id}.json`),JSON.stringify({data:rows}));
   options.progress?.(`${source.id}: ${report.status}, ${rows.length} records`);
   return {report,rows};
@@ -169,9 +193,10 @@ async function collectEndpoints(id:'endpoints'|'image_endpoints',models:Row[],ru
     const raw:Row={model_id:modelId,source_url:url,collected_at:new Date().toISOString()};
     try {
       const result=await download(url,options);
-      Object.assign(raw,{collected_at:result.collected_at,http_status:result.status,attempts:result.attempts,sha256:hash(result.bytes),body_base64:Buffer.from(result.bytes).toString('base64')});
+      const archived=redactForPublication(result.bytes);
+      Object.assign(raw,{collected_at:result.collected_at,http_status:result.status,attempts:result.attempts,sha256:hash(archived.bytes),body_base64:Buffer.from(archived.bytes).toString('base64'),...(archived.redactions?{original_sha256:archived.original_sha256,redactions:archived.redactions}:{})});
       if(result.status!==200) throw new Error(`HTTP ${result.status}`);
-      const json:unknown=JSON.parse(new TextDecoder().decode(result.bytes));
+      const json:unknown=JSON.parse(new TextDecoder().decode(archived.bytes));
       if(!object(json)) throw new Error('Expected endpoint JSON object');
       const container=isImage?json:json.data;
       if(!object(container)) throw new Error('Expected endpoint response data object');
@@ -188,6 +213,11 @@ async function collectEndpoints(id:'endpoints'|'image_endpoints',models:Row[],ru
   });
   const rows=results.flatMap(result=>result.rows);
   const errors=results.flatMap(result=>result.error?[result.error]:[]);
+  const redactionCount=results.reduce((count,result)=>count+(object(result.raw.redactions)?Number(result.raw.redactions.count):0),0);
+  if(redactionCount>0) {
+    report.redactions={...credentialRedaction,count:redactionCount};
+    report.coverage+=' Credential examples redacted for public publication; individual original response hashes are recorded in raw request metadata.';
+  }
   const rawBytes=results.map(result=>JSON.stringify(result.raw)).join('\n')+'\n';
   const rawPath=`raw/${id}.ndjson`;
   await writeFile(join(runDir,rawPath),rawBytes);

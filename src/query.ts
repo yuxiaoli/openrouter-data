@@ -21,7 +21,7 @@ export function parseQuery(params: URLSearchParams): Result<QueryInput> {
 }
 const object = (v: unknown): Row => v && typeof v === 'object' && !Array.isArray(v) ? v as Row : {};
 const strings = (v: unknown): string[] => Array.isArray(v) ? v.filter((s): s is string => typeof s === 'string') : typeof v === 'string' ? [v] : [];
-export const rowId = (r: Row): string => String(r.model_id ?? r.id ?? r.slug ?? r.name ?? r.guid ?? r.link ?? '');
+export const rowId = (r: Row): string => String(r.model_id ?? r.id ?? r.slug ?? r.name ?? (typeof r.guid==='string'?r.guid:object(r.guid)['#text']) ?? r.link ?? '');
 export function dimensionValues(row: Row, dimension: string): string[] {
   const arch = object(row.architecture);
   if (dimension === 'author') { const id = rowId(row); return id.includes('/') ? [id.split('/')[0]!] : []; }
@@ -62,7 +62,12 @@ export function queryRows(rows: Row[], params: URLSearchParams) {
 }
 export function dimensions(rows: Row[], query: QueryInput) {
   const filtered = filteredRows(rows,query); const counts = new Map<string,number>(); let missing_count=0;
-  for(const row of filtered) { const values = new Set(dimensionValues(row,query.dimension!)); if(!values.size) missing_count++; for(const v of values) counts.set(v,(counts.get(v)??0)+1); }
+  for(const row of filtered) {
+    const canonicalProvider=row.provider_slug??row.slug??row.provider_name??row.provider;
+    const values = new Set(query.dimension==='provider' ? typeof canonicalProvider==='string' && canonicalProvider ? [canonicalProvider] : [] : dimensionValues(row,query.dimension!));
+    if(!values.size) missing_count++;
+    for(const v of values) counts.set(v,(counts.get(v)??0)+1);
+  }
   const buckets = [...counts].map(([value,count])=>({value,count})).sort((a,b)=>b.count-a.count || a.value.localeCompare(b.value,'en'));
   return {data:buckets.slice(query.offset,query.offset+query.limit),total:buckets.length,matched_records:filtered.length,missing_count,limit:query.limit,offset:query.offset};
 }

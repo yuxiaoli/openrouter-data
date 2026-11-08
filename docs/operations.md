@@ -47,11 +47,11 @@ npm run sync -- --output data
 ```sh
 npm run check
 npm run build
-npx wrangler pages deploy dist --project-name openrouter-data --branch main --force
+npx wrangler pages deploy dist --project-name openrouter-data --branch main
 npm run smoke -- https://openrouter-data.pages.dev
 ```
 
-`--force` 用于当前 Wrangler 保留 Pages 部署路径，避免自动迁移到需要额外 Workers 权限的流程。代码变更需同步维护 `docs/api/openapi.json`，CI 检查通过后部署。Cloudflare 上回滚到之前已验证的代码部署不会改写 data 分支。数据恢复应修复采集逻辑并生成新快照；若索引损坏，先从 Git 历史核实并恢复已真实存在的运行引用，不改旧运行内容。
+首次创建 `openrouter-data` 项目时已使用 `pages project create --force` 保留 Pages 项目；项目现已建立，后续部署不使用 `--force`。代码变更需同步维护 `docs/api/openapi.json`，CI 检查通过后部署。Cloudflare 上回滚到之前已验证的代码部署不会改写 data 分支。数据恢复应修复采集逻辑并生成新快照；若索引损坏，先从 Git 历史核实并恢复已真实存在的运行引用，不改旧运行内容。
 
 ## 首次验收记录
 

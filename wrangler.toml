@@ -1,4 +1,3 @@
 name = "openrouter-data"
 compatibility_date = "2026-11-01"
 pages_build_output_dir = "dist"
-account_id = "5f5cb15c4eab49f3b5302a01036f1f2d"

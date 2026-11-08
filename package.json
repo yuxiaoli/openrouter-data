@@ -12,7 +12,8 @@
     "deploy": "wrangler pages deploy dist --project-name openrouter-data --branch main",
     "dev": "wrangler pages dev dist",
     "smoke": "tsx scripts/smoke.ts",
-    "build": "tsx scripts/build.ts"
+    "build": "tsx scripts/build.ts",
+    "verify:archive": "tsx scripts/verify-archive.ts"
   },
   "dependencies": {
     "fast-xml-parser": "^5.3.0",
