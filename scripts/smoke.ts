@@ -13,7 +13,7 @@ async function get(path:string,status=200) {
 }
 async function body(path:string,status=200) { const response=await get(path,status); assert.match(response.headers.get('content-type')??'',/application\/json/); return await response.json() as any; }
 const home=await body('/'); assert.equal(home.independent_service,true);
-const spec=await body('/docs/api/openapi.json'); await SwaggerParser.validate(spec); assert.equal(spec.info.title,'OpenRouter Data Archive API');
+const spec=await body('/docs/api/openapi.json'); await SwaggerParser.validate(structuredClone(spec)); assert.equal(spec.info.title,'OpenRouter Data Archive API');
 assert.deepEqual(await body('/openapi.json'),spec);
 const health=await body('/healthz'); assert.equal(health.status,'ok'); assert.ok(health.last_success);
 const snapshot=expected??health.last_success;
