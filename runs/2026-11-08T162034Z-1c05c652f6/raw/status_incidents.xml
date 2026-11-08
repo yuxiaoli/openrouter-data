@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>OpenRouter - Incident History</title>
+    <link>https://status.openrouter.ai</link>
+    <description>Incident history for OpenRouter</description>
+    <lastBuildDate>Sun, 01 Nov 2026 22:00:00 +0000</lastBuildDate>
+    <atom:link href="https://status.openrouter.ai/history.rss" rel="self"></atom:link>
+    <item>
+      <title>Scheduled site maintenance</title>
+      <link>https://status.openrouter.ai/maintenances/e9f33261-2512-4159-ad12-6862de956da0</link>
+      <guid isPermaLink="true">https://status.openrouter.ai/maintenances/e9f33261-2512-4159-ad12-6862de956da0</guid>
+      <pubDate>Sun, 01 Nov 2026 22:00:00 +0000</pubDate>
+      <category>maintenance</category>
+      <description>&lt;p&gt;&lt;small&gt;Nov  1, 22:00 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Completed&lt;/strong&gt; - Maintenance is complete. Full dashboard functionality has been restored. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Nov  1, 21:00 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;In Progress&lt;/strong&gt; - We are conducting site maintenance. Certain dashboard functionality (eg adding credits, creating or modifying API keys, or updating user settings) is not available. Inference is not affected. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct 26, 20:17 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Scheduled&lt;/strong&gt; - We will be conducting site maintenance. Certain dashboard functionality (eg adding credits, creating or modifying API keys, or updating user settings) will not available during this period. Inference is not affected. &lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Video webhooks are not being called</title>
+      <link>https://status.openrouter.ai/ed151be8-8a06-4572-9b7c-89327889a31b</link>
+      <guid isPermaLink="true">https://status.openrouter.ai/ed151be8-8a06-4572-9b7c-89327889a31b</guid>
+      <pubDate>Mon, 26 Oct 2026 00:07:28 +0000</pubDate>
+      <category>incident</category>
+      <description>&lt;p&gt;&lt;small&gt;Oct 26, 00:07 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Resolved&lt;/strong&gt; - Video webhooks are firing correctly again, and all backlogged video webhooks have been replayed. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct 25, 22:50 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Identified&lt;/strong&gt; - Video webhooks are being delivered again, although there may still be some latency. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct 25, 21:57 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Investigating&lt;/strong&gt; - Video webhooks are not being called. We are investigating the issue. Polling for video results is unaffected. &lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Activity logs, usage metrics reporting are experiencing delays</title>
+      <link>https://status.openrouter.ai/22d9537c-f678-4fde-99d3-4eddaf812863</link>
+      <guid isPermaLink="true">https://status.openrouter.ai/22d9537c-f678-4fde-99d3-4eddaf812863</guid>
+      <pubDate>Sat, 17 Oct 2026 04:43:26 +0000</pubDate>
+      <category>incident</category>
+      <description>&lt;p&gt;&lt;small&gt;Oct 17, 04:43 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Resolved&lt;/strong&gt; - The issue is now resolved. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct 17, 01:15 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Monitoring&lt;/strong&gt; - Logs and usage metrics are now up to date in almost all cases. A small fraction are still delayed. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct 17, 00:09 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Identified&lt;/strong&gt; - Logs latency continues to be elevated. Inference is not affected. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct 16, 19:26 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Identified&lt;/strong&gt; - Logs latency has been significantly reduced, though is still elevated. Inference is not affected. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct 16, 09:45 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Identified&lt;/strong&gt; - We have identified the issue and are deploying remediations. Inference is not affected. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct 16, 05:44 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Identified&lt;/strong&gt; - We have identified the issue and are deploying remediations. Inference is not affected. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct 15, 22:32 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Identified&lt;/strong&gt; - We have identified the issue and are deploying remediations. Inference is not affected. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct 15, 18:20 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Investigating&lt;/strong&gt; - We are continuing to investigate the issue. Inference is not affected. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct 15, 14:50 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Investigating&lt;/strong&gt; - We are investigating the issue. &lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Usage Reporting Delays in Web App</title>
+      <link>https://status.openrouter.ai/d9f334bd-373e-491b-be8e-00dbea025f69</link>
+      <guid isPermaLink="true">https://status.openrouter.ai/d9f334bd-373e-491b-be8e-00dbea025f69</guid>
+      <pubDate>Fri, 09 Oct 2026 01:33:13 +0000</pubDate>
+      <category>incident</category>
+      <description>&lt;p&gt;&lt;small&gt;Oct  9, 01:33 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Resolved&lt;/strong&gt; - The issue is now resolved. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct  8, 20:55 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Monitoring&lt;/strong&gt; - We are continuing to process backlogged usage events and monitoring closely &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct  8, 20:01 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Monitoring&lt;/strong&gt; - We are currently processing backlogged usage events and monitoring closely &lt;/p&gt;&lt;p&gt;&lt;small&gt;Oct  8, 18:55 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Investigating&lt;/strong&gt; - Activity logs, usage metrics reporting are experiencing delays. &lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Meta Provider API calls are failing on OpenRouter with error 401.</title>
+      <link>https://status.openrouter.ai/7e562219-ff53-496e-94b8-e416c40bfce0</link>
+      <guid isPermaLink="true">https://status.openrouter.ai/7e562219-ff53-496e-94b8-e416c40bfce0</guid>
+      <pubDate>Fri, 25 Sep 2026 00:33:18 +0000</pubDate>
+      <category>incident</category>
+      <description>&lt;p&gt;&lt;small&gt;Sep 25, 00:33 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Resolved&lt;/strong&gt; - The issue is now resolved. Root cause was identified as an authentication issue on the Meta Developer API Platform impacting all Managed Meta Accounts including OpenRouter&amp;#39;s. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Sep 24, 23:46 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Monitoring&lt;/strong&gt; - Meta Provider API calls are operational again. We are continuing to monitor. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Sep 24, 23:28 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Monitoring&lt;/strong&gt; - The Meta team has begun applying remediations and success rate is improving. Root cause is still unknown. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Sep 24, 23:15 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Identified&lt;/strong&gt; - The Meta team is continuing to investigate and is beginning work on remediation. Root cause is still unknown. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Sep 24, 22:55 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Investigating&lt;/strong&gt; - The Meta team has been pinged and is investigating. &lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Sign-in and sign-up failures on openrouter.ai</title>
+      <link>https://status.openrouter.ai/73ea3746-4103-4f7d-a3f3-23b04178bfaa</link>
+      <guid isPermaLink="true">https://status.openrouter.ai/73ea3746-4103-4f7d-a3f3-23b04178bfaa</guid>
+      <pubDate>Wed, 23 Sep 2026 17:38:01 +0000</pubDate>
+      <category>incident</category>
+      <description>&lt;p&gt;&lt;small&gt;Sep 23, 17:38 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Resolved&lt;/strong&gt; - This incident is resolved. Between approximately 11:50 and 17:11 UTC, a portion of sign-in and sign-up attempts on openrouter.ai were incorrectly blocked with the message &amp;#34;This action was detected as suspicious and has been blocked.&amp;#34;&#xA;&#xA;The cause was an infrastructure issue at our authentication provider that made one of its bot-protection checks fail, which in turn triggered a blocking rule. The provider disabled the rule at 17:11 UTC and sign-ins have succeeded normally since then.&#xA;&#xA;Existing sessions and API keys were not affected at any point, and there was no security breach or exposure of account data.&#xA;&#xA;If you were unable to sign in earlier, please try again. We apologize for the disruption. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Sep 23, 17:25 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Monitoring&lt;/strong&gt; - The provider has disabled the affected rule and new sign-ins, we are monitoring the recovery. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Sep 23, 17:19 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Identified&lt;/strong&gt; - We have identified the cause. An infrastructure issue at our authentication provider caused one of its bot-protection checks to fail, which incorrectly blocked a portion of sign-in and sign-up attempts. &lt;/p&gt;&lt;p&gt;&lt;small&gt;Sep 23, 17:11 UTC&lt;/small&gt;&lt;br&gt;&lt;strong&gt;Investigating&lt;/strong&gt; - We are investigating the issue.&#xA;&#xA;Since approximately 11:50 UTC, a portion of sign-in and sign-up attempts on openrouter.ai are failing with the message &amp;#34;This action was detected as suspicious and has been blocked.&amp;#34; This affects all login methods.&#xA;&#xA;Workaround: Retrying the sign-in usually succeeds within a few attempts. &lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
