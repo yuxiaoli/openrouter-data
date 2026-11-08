@@ -4,7 +4,7 @@
   "info": {
     "title": "OpenRouter Data Archive API",
     "version": "1.0.0",
-    "description": "Independent, unofficial daily archive and read-only query service for public OpenRouter data. Official JSON/RSS sources are attribution, not this deployment. Each attempt preserves provenance, timestamps, coverage and missing content. Failed collection never replaces last_success or publishes an empty success. Dates are UTC and historical coverage begins with the first real successful collection. Public model prompt/completion prices are USD/token; other original billing units remain unchanged. HEAD mirrors GET status/headers without a body; OPTIONS returns 204 with CORS headers. Only listed query parameters are accepted. Source bodies otherwise retain upstream content; credential-shaped official example strings are replaced before public publication with explicit redactions and original_sha256 metadata."
+    "description": "Independent, unofficial daily archive and read-only query service for public OpenRouter data. Official JSON/RSS sources are attribution, not this deployment. Each attempt preserves provenance, timestamps, coverage and missing content. Failed collection never replaces last_success or publishes an empty success. Dates are UTC and historical coverage begins with the first real successful collection. Public model prompt/completion prices are USD/token; other original billing units remain unchanged. HEAD mirrors GET status/headers without a body; OPTIONS returns 204 with CORS headers. Only listed query parameters are accepted. Source bodies otherwise retain upstream content; credential-shaped official example strings are replaced before public publication with explicit redactions and original_sha256 metadata. Negative upstream router price sentinels remain in raw data but are treated as unknown for price/free filters and sorted last by prompt price."
   },
   "servers": [
     {
@@ -1788,7 +1788,7 @@
             "name": "max_prompt_price",
             "in": "query",
             "required": false,
-            "description": "Maximum pricing.prompt in USD per token, NOT per million tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Decimal notation without sign or exponent. Missing/null prices do not match. Does not interpret image endpoint price arrays or video SKU prices.",
+            "description": "Maximum pricing.prompt in USD per token, NOT per million tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Decimal notation without sign or exponent. Missing/null prices do not match. Does not interpret image endpoint price arrays or video SKU prices. Negative upstream prices (for example router sentinel -1) are treated as unknown and excluded, while their raw values remain preserved.",
             "schema": {
               "type": "number",
               "minimum": 0,
@@ -1800,7 +1800,7 @@
             "name": "free",
             "in": "query",
             "required": false,
-            "description": "Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. true requires numeric prompt and completion prices both zero; false requires both present and at least one nonzero. Unknown prices are neither free nor paid.",
+            "description": "Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. true requires numeric prompt and completion prices both zero; false requires both present and at least one nonzero. Unknown prices are neither free nor paid. Negative prompt or completion prices (including router sentinel -1) are unknown and match neither true nor false.",
             "schema": {
               "type": "string",
               "enum": [
@@ -1814,7 +1814,7 @@
             "name": "sort",
             "in": "query",
             "required": false,
-            "description": "Sort field. Numbers sort numerically, missing values last in either direction. Identity is the ascending tie-breaker. Record identity uses model_id, id, slug, name, guid, then link. published_at parses row.published_at when present, otherwise RSS pubDate, into a chronological timestamp; missing/invalid dates always sort last.",
+            "description": "Sort field. Numbers sort numerically, missing values last in either direction. Identity is the ascending tie-breaker. Record identity uses model_id, id, slug, name, guid, then link. published_at parses row.published_at when present, otherwise RSS pubDate, into a chronological timestamp; missing/invalid dates always sort last. For pricing.prompt, negative upstream sentinel prices are treated as unknown and always sort last in either direction; raw rows retain the original negative values.",
             "schema": {
               "type": "string",
               "enum": [
@@ -2318,7 +2318,7 @@
             "name": "max_prompt_price",
             "in": "query",
             "required": false,
-            "description": "Maximum pricing.prompt in USD per token, NOT per million tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Decimal notation without sign or exponent. Missing/null prices do not match. Does not interpret image endpoint price arrays or video SKU prices.",
+            "description": "Maximum pricing.prompt in USD per token, NOT per million tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Decimal notation without sign or exponent. Missing/null prices do not match. Does not interpret image endpoint price arrays or video SKU prices. Negative upstream prices (for example router sentinel -1) are treated as unknown and excluded, while their raw values remain preserved.",
             "schema": {
               "type": "number",
               "minimum": 0,
@@ -2330,7 +2330,7 @@
             "name": "free",
             "in": "query",
             "required": false,
-            "description": "Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. true requires numeric prompt and completion prices both zero; false requires both present and at least one nonzero. Unknown prices are neither free nor paid.",
+            "description": "Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. true requires numeric prompt and completion prices both zero; false requires both present and at least one nonzero. Unknown prices are neither free nor paid. Negative prompt or completion prices (including router sentinel -1) are unknown and match neither true nor false.",
             "schema": {
               "type": "string",
               "enum": [
@@ -2704,7 +2704,7 @@
             "name": "max_prompt_price",
             "in": "query",
             "required": false,
-            "description": "Maximum pricing.prompt in USD per token, NOT per million tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Decimal notation without sign or exponent. Missing/null prices do not match. Does not interpret image endpoint price arrays or video SKU prices.",
+            "description": "Maximum pricing.prompt in USD per token, NOT per million tokens. Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. Decimal notation without sign or exponent. Missing/null prices do not match. Does not interpret image endpoint price arrays or video SKU prices. Negative upstream prices (for example router sentinel -1) are treated as unknown and excluded, while their raw values remain preserved.",
             "schema": {
               "type": "number",
               "minimum": 0,
@@ -2716,7 +2716,7 @@
             "name": "free",
             "in": "query",
             "required": false,
-            "description": "Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. true requires numeric prompt and completion prices both zero; false requires both present and at least one nonzero. Unknown prices are neither free nor paid.",
+            "description": "Valid only for models, embedding_models, eu_models, endpoints, zdr_endpoints. true requires numeric prompt and completion prices both zero; false requires both present and at least one nonzero. Unknown prices are neither free nor paid. Negative prompt or completion prices (including router sentinel -1) are unknown and match neither true nor false.",
             "schema": {
               "type": "string",
               "enum": [
@@ -2730,7 +2730,7 @@
             "name": "sort",
             "in": "query",
             "required": false,
-            "description": "Sort field. Numbers sort numerically, missing values last in either direction. Identity is the ascending tie-breaker. Record identity uses model_id, id, slug, name, guid, then link. published_at parses row.published_at when present, otherwise RSS pubDate, into a chronological timestamp; missing/invalid dates always sort last. When omitted, models/embedding_models/eu_models/image_models/video_models use created; model_rss/blog_posts/status_incidents use published_at; all other types use id. Explicit sort uses order=asc unless order is supplied.",
+            "description": "Sort field. Numbers sort numerically, missing values last in either direction. Identity is the ascending tie-breaker. Record identity uses model_id, id, slug, name, guid, then link. published_at parses row.published_at when present, otherwise RSS pubDate, into a chronological timestamp; missing/invalid dates always sort last. When omitted, models/embedding_models/eu_models/image_models/video_models use created; model_rss/blog_posts/status_incidents use published_at; all other types use id. Explicit sort uses order=asc unless order is supplied. For pricing.prompt, negative upstream sentinel prices are treated as unknown and always sort last in either direction; raw rows retain the original negative values.",
             "schema": {
               "type": "string",
               "enum": [
@@ -3577,7 +3577,7 @@
             "null"
           ]
         },
-        "description": "Upstream prices. Model prompt/completion are USD per token decimal strings, not USD per million tokens. Other charge keys retain upstream meaning; missing is not zero."
+        "description": "Upstream prices. Model prompt/completion are USD per token decimal strings, not USD per million tokens. Other charge keys retain upstream meaning; missing is not zero. Negative prices such as router sentinel -1 mean unknown pricing: raw values are retained, max_prompt_price and free=true/false exclude those rows, and pricing.prompt sorting places them last in both directions."
       },
       "ModelRow": {
         "type": "object",

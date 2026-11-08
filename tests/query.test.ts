@@ -26,3 +26,10 @@ test('RSS identity search reads the text of structured upstream GUIDs',()=>{
   const rows=[{guid:{'#text':'https://upstream.test/post-1','@_isPermaLink':'true'},title:'Original title'}];
   expect(queryRows(rows,new URLSearchParams('q=post-1')).data).toEqual(rows);
 });
+
+test('negative upstream price sentinels remain unknown for price filters and sort last',()=>{
+  const rows=[{id:'test/dynamic',pricing:{prompt:'-1',completion:'-1'}},{id:'test/paid',pricing:{prompt:'0.00001',completion:'0.00002'}}];
+  expect(queryRows(rows,new URLSearchParams('max_prompt_price=0.001')).data).toEqual([rows[1]]);
+  expect(queryRows(rows,new URLSearchParams('free=false')).data).toEqual([rows[1]]);
+  expect(queryRows(rows,new URLSearchParams('sort=pricing.prompt')).data).toEqual([rows[1],rows[0]]);
+});

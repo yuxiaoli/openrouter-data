@@ -48,7 +48,7 @@ curl 'https://openrouter-data.pages.dev/rss.xml?type=models&author=anthropic&lim
 
 RSS 默认让最近内容在前：模型目录按创建时间降序，模型 / 博客 / 状态 feed 按上游发布时间降序；可用 `sort` / `order` 显式覆盖。`sort=published_at` 读取 RSS 的 `pubDate` 或 `published_at`，完整规则见 OpenAPI。
 
-筛选项包括 `q`、`model`、`author`、`provider`、`input_modality`、`output_modality`、`parameter`、`min_context`、`max_prompt_price` 和 `free`；具体适用类型见 OpenAPI。离散过滤值支持逗号分隔，组内为 OR、不同条件为 AND。未知、重复、冲突或不适用参数返回 400，不会默默忽略。JSON 列表使用 `meta`、`data`、`pagination` 包装；`meta.coverage` 附该数据集的来源与缺口。缺失价格不当作零；`free=true` 仅匹配明确为零的 prompt 与 completion 单价。多值维度同一记录可能计入多个桶，维度计数不可直接相加当作独立模型数。
+筛选项包括 `q`、`model`、`author`、`provider`、`input_modality`、`output_modality`、`parameter`、`min_context`、`max_prompt_price` 和 `free`；具体适用类型见 OpenAPI。离散过滤值支持逗号分隔，组内为 OR、不同条件为 AND。未知、重复、冲突或不适用参数返回 400，不会默默忽略。JSON 列表使用 `meta`、`data`、`pagination` 包装；`meta.coverage` 附该数据集的来源与缺口。缺失或负值价格视为未知，不参与价格/免费筛选，价格排序时放最后；原始负值仍保留在数据中。`free=true` 仅匹配明确为零的 prompt 与 completion 单价。多值维度同一记录可能计入多个桶，维度计数不可直接相加当作独立模型数。
 
 ## 快照与失败处理
 

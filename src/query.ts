@@ -31,14 +31,15 @@ export function dimensionValues(row: Row, dimension: string): string[] {
   return strings(arch[key] ?? row[key]);
 }
 const numeric = (v: unknown): number | undefined => (typeof v === 'number' || (typeof v === 'string' && v.trim() !== '')) && Number.isFinite(Number(v)) ? Number(v) : undefined;
+const price = (v:unknown):number|undefined => { const n=numeric(v); return n!==undefined && n>=0?n:undefined; };
 function isFree(row: Row): boolean | undefined {
-  const p = object(row.pricing); const prompt = numeric(p.prompt); const completion = numeric(p.completion);
+  const p = object(row.pricing); const prompt = price(p.prompt); const completion = price(p.completion);
   return prompt === undefined || completion === undefined ? undefined : prompt === 0 && completion === 0;
 }
 export function filteredRows(rows: Row[], query: QueryInput): Row[] {
   const match = (values: string[], filter: string|undefined) => filter === undefined || filter.split(',').some(v=>values.some(s=>s.toLowerCase()===v.trim().toLowerCase()));
   return rows.filter(row => {
-    const prompt = numeric(object(row.pricing).prompt); const context = numeric(row.context_length);
+    const prompt = price(object(row.pricing).prompt); const context = numeric(row.context_length);
     return (!query.q || [rowId(row),row.name,row.description,row.title].some(v=>typeof v==='string' && v.toLowerCase().includes(query.q!.toLowerCase())))
       && match([String(row.model_id ?? row.id ?? '')],query.model)
       && ['author','provider','input_modality','output_modality','parameter'].every(d=>match(dimensionValues(row,d),query[d as keyof QueryInput] as string|undefined))
@@ -50,7 +51,7 @@ export function filteredRows(rows: Row[], query: QueryInput): Row[] {
 export function queryRows(rows: Row[], params: URLSearchParams) {
   const query = Query.parse(Object.fromEntries(params));
   const filtered = filteredRows(rows,query);
-  const value = (r: Row): string|number|undefined => query.sort==='published_at' ? numeric(Date.parse(String(r.published_at??r.pubDate??''))) : query.sort==='pricing.prompt' ? numeric(object(r.pricing).prompt) : ['created','context_length'].includes(query.sort) ? numeric(r[query.sort]) : query.sort==='id' ? rowId(r) : typeof r.name==='string' ? r.name : undefined;
+  const value = (r: Row): string|number|undefined => query.sort==='published_at' ? numeric(Date.parse(String(r.published_at??r.pubDate??''))) : query.sort==='pricing.prompt' ? price(object(r.pricing).prompt) : ['created','context_length'].includes(query.sort) ? numeric(r[query.sort]) : query.sort==='id' ? rowId(r) : typeof r.name==='string' ? r.name : undefined;
   filtered.sort((a,b)=>{
     const av=value(a),bv=value(b);
     if(av===undefined && bv!==undefined) return 1;

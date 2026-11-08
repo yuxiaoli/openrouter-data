@@ -36,6 +36,10 @@ const model=modelPage.data[0]; const author=model.id.split('/')[0]; const modali
 const params=new URLSearchParams({type:'models',snapshot,model:model.id,author,limit:'1',min_context:String(model.context_length??0)});
 if(modality) params.set('output_modality',modality);
 const multidimensional=await body(`/api/v1/data?${params}`); assert.equal(multidimensional.data[0]?.id,model.id);
+for(const filter of ['max_prompt_price=100','free=false']) {
+  const dynamic=await body(`/api/v1/data?type=models&${select}&model=openrouter%2Fauto&${filter}`);
+  assert.equal(dynamic.pagination.total,0,'A negative upstream price must not become a known numeric price.');
+}
 const dimension=await body(`/api/v1/dimensions?type=models&${select}&dimension=output_modality&author=${encodeURIComponent(author)}`); assert.ok(dimension.data.length>0);
 const providerDim=await body(`/api/v1/dimensions?type=endpoints&${select}&dimension=provider&limit=1`); assert.ok(providerDim.data.length>0);
 const provider=providerDim.data[0].value;
