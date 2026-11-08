@@ -19,6 +19,10 @@ const health=await body('/healthz'); assert.equal(health.status,'ok'); assert.ok
 const snapshot=expected??health.last_success;
 const select=`snapshot=${encodeURIComponent(snapshot)}`;
 const history=await body('/api/v1/snapshots?limit=2'); assert.ok(history.data.some((s:any)=>s.id===snapshot));
+if(history.pagination.total>1) {
+  const past=await body('/api/v1/snapshots?status=success&offset=1&limit=1');
+  if(past.data.length) { const historical=await body(`/api/v1/data?type=models&snapshot=${encodeURIComponent(past.data[0].id)}&limit=1`); assert.equal(historical.meta.snapshot,past.data[0].id); }
+}
 const manifest=await body(`/api/v1/manifest?${select}`); assert.equal(manifest.data.id,snapshot); assert.equal(manifest.data.status,'success');
 const datasets=await body(`/api/v1/datasets?${select}`); assert.ok(datasets.data.some((d:any)=>d.status==='unavailable'));
 for(const type of datasetIds) {

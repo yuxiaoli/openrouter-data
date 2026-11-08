@@ -9,7 +9,7 @@ export const Query = z.object({
   author: z.string().min(1).max(200).optional(), provider: z.string().min(1).max(200).optional(),
   input_modality: z.string().min(1).max(200).optional(), output_modality: z.string().min(1).max(200).optional(), parameter: z.string().min(1).max(200).optional(),
   min_context: integer(0, 1e10).optional(), max_prompt_price: number(1e6).optional(),
-  free: z.enum(['true','false']).optional(), sort: z.enum(['id','name','created','context_length','pricing.prompt']).default('id'),
+  free: z.enum(['true','false']).optional(), sort: z.enum(['id','name','created','published_at','context_length','pricing.prompt']).default('id'),
   order: z.enum(['asc','desc']).default('asc'), limit: integer(1,500).default(100), offset: integer(0,10000000).default(0),
   dimension: z.enum(['author','provider','input_modality','output_modality','parameter']).optional(),
 }).strict();
@@ -50,7 +50,7 @@ export function filteredRows(rows: Row[], query: QueryInput): Row[] {
 export function queryRows(rows: Row[], params: URLSearchParams) {
   const query = Query.parse(Object.fromEntries(params));
   const filtered = filteredRows(rows,query);
-  const value = (r: Row): string|number|undefined => query.sort==='pricing.prompt' ? numeric(object(r.pricing).prompt) : ['created','context_length'].includes(query.sort) ? numeric(r[query.sort]) : query.sort==='id' ? rowId(r) : typeof r.name==='string' ? r.name : undefined;
+  const value = (r: Row): string|number|undefined => query.sort==='published_at' ? numeric(Date.parse(String(r.published_at??r.pubDate??''))) : query.sort==='pricing.prompt' ? numeric(object(r.pricing).prompt) : ['created','context_length'].includes(query.sort) ? numeric(r[query.sort]) : query.sort==='id' ? rowId(r) : typeof r.name==='string' ? r.name : undefined;
   filtered.sort((a,b)=>{
     const av=value(a),bv=value(b);
     if(av===undefined && bv!==undefined) return 1;

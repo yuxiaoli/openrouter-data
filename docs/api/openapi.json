@@ -1814,13 +1814,14 @@
             "name": "sort",
             "in": "query",
             "required": false,
-            "description": "Sort field. Numbers sort numerically, missing values last in either direction. Identity is the ascending tie-breaker. Record identity uses model_id, id, slug, name, guid, then link.",
+            "description": "Sort field. Numbers sort numerically, missing values last in either direction. Identity is the ascending tie-breaker. Record identity uses model_id, id, slug, name, guid, then link. published_at parses row.published_at when present, otherwise RSS pubDate, into a chronological timestamp; missing/invalid dates always sort last.",
             "schema": {
               "type": "string",
               "enum": [
                 "id",
                 "name",
                 "created",
+                "published_at",
                 "context_length",
                 "pricing.prompt"
               ],
@@ -2541,7 +2542,7 @@
       "get": {
         "operationId": "getArchiveRss",
         "summary": "Filtered independent archive RSS",
-        "description": "Query parameters are strict: unknown names, duplicate keys and inapplicable filters return 400. Comma-separated values use OR within each field and AND across fields; exact filters are case insensitive and comma-separated values are individually trimmed. All results come from stored snapshots, with no live upstream query. Collection dates are UTC, distinct from model creation/publication dates. History begins with actual successful collection, with no invented backfill. A zero-match query on a successfully collected dataset is a valid empty result. Same data selectors/filters/sort, with maximum limit=100; dimension is rejected. This independently titled feed carries source and snapshot attribution, XML-escaped fields, and a stable per-run item guid under this service origin (snapshot + dataset + source-row position). pubDate uses original row pubDate/published_at, otherwise numeric model created, otherwise snapshot completion, falling back on snapshot completion if the date is invalid. This feed does not redirect to or claim ownership of the official RSS.",
+        "description": "Query parameters are strict: unknown names, duplicate keys and inapplicable filters return 400. Comma-separated values use OR within each field and AND across fields; exact filters are case insensitive and comma-separated values are individually trimmed. All results come from stored snapshots, with no live upstream query. Collection dates are UTC, distinct from model creation/publication dates. History begins with actual successful collection, with no invented backfill. A zero-match query on a successfully collected dataset is a valid empty result. Same data selectors/filters/sort, with maximum limit=100; dimension is rejected. This independently titled feed carries source and snapshot attribution, XML-escaped fields, and a stable per-run item guid under this service origin (snapshot + dataset + source-row position). pubDate uses original row pubDate/published_at, otherwise numeric model created, otherwise snapshot completion, falling back on snapshot completion if the date is invalid. This feed does not redirect to or claim ownership of the official RSS. Default RSS ordering shows newest records first: five model catalogs use created desc; model_rss/blog_posts/status_incidents use published_at desc; other types use id asc. Supplying order overrides that direction; supplying sort without order uses asc.",
         "parameters": [
           {
             "name": "type",
@@ -2729,17 +2730,17 @@
             "name": "sort",
             "in": "query",
             "required": false,
-            "description": "Sort field. Numbers sort numerically, missing values last in either direction. Identity is the ascending tie-breaker. Record identity uses model_id, id, slug, name, guid, then link.",
+            "description": "Sort field. Numbers sort numerically, missing values last in either direction. Identity is the ascending tie-breaker. Record identity uses model_id, id, slug, name, guid, then link. published_at parses row.published_at when present, otherwise RSS pubDate, into a chronological timestamp; missing/invalid dates always sort last. When omitted, models/embedding_models/eu_models/image_models/video_models use created; model_rss/blog_posts/status_incidents use published_at; all other types use id. Explicit sort uses order=asc unless order is supplied.",
             "schema": {
               "type": "string",
               "enum": [
                 "id",
                 "name",
                 "created",
+                "published_at",
                 "context_length",
                 "pricing.prompt"
-              ],
-              "default": "id"
+              ]
             },
             "example": "pricing.prompt"
           },
@@ -2747,14 +2748,13 @@
             "name": "order",
             "in": "query",
             "required": false,
-            "description": "Primary sort direction.",
+            "description": "Explicit direction overrides the RSS default. When sort is omitted: model families and source-feed datasets default desc, other types default asc. When sort is explicit, omitted order defaults asc.",
             "schema": {
               "type": "string",
               "enum": [
                 "asc",
                 "desc"
-              ],
-              "default": "asc"
+              ]
             },
             "example": "asc"
           },
@@ -2794,10 +2794,15 @@
                   "type": "string"
                 },
                 "examples": {
-                  "actualSuccessfulSync": {
-                    "summary": "Actual published archive 2026-11-08T162034Z-1c05c652f6",
-                    "description": "Captured from the implemented handler using actual archived files. Request: /rss.xml?type=model_count&snapshot=2026-11-08T162034Z-1c05c652f6&limit=1. Freshness metadata describes capture time.",
-                    "value": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\"><channel><title>OpenRouter Data Archive — model_count</title><link>https://openrouter-data.pages.dev</link><description>Independent snapshot archive; source: https://openrouter.ai/api/v1/models/count?output_modalities=all; snapshot 2026-11-08T162034Z-1c05c652f6. Not operated by OpenRouter.</description><lastBuildDate>Sun, 08 Nov 2026 16:21:09 GMT</lastBuildDate><atom:link href=\"https://openrouter-data.pages.dev/rss.xml?type=model_count&amp;snapshot=2026-11-08T162034Z-1c05c652f6&amp;limit=1\" rel=\"self\" type=\"application/rss+xml\"/><item><title></title><link>https://openrouter-data.pages.dev/api/v1/data?type=model_count&amp;snapshot=2026-11-08T162034Z-1c05c652f6</link><guid isPermaLink=\"false\">https://openrouter-data.pages.dev/snapshots/2026-11-08T162034Z-1c05c652f6/model_count/0</guid><pubDate>Sun, 08 Nov 2026 16:21:09 GMT</pubDate><description>{&quot;count&quot;:705}</description><category>model_count</category></item></channel></rss>"
+                  "newestModels": {
+                    "summary": "Actual models RSS with omitted sort/order",
+                    "description": "Real archived response from 2026-11-08T162034Z-1c05c652f6; request /rss.xml?type=models&snapshot=2026-11-08T162034Z-1c05c652f6&limit=2. Demonstrates automatic newest-first RSS ordering.",
+                    "value": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\"><channel><title>OpenRouter Data Archive — models</title><link>https://openrouter-data.pages.dev</link><description>Independent snapshot archive; source: https://openrouter.ai/api/v1/models?output_modalities=all; snapshot 2026-11-08T162034Z-1c05c652f6. Not operated by OpenRouter.</description><lastBuildDate>Sun, 08 Nov 2026 16:21:09 GMT</lastBuildDate><atom:link href=\"https://openrouter-data.pages.dev/rss.xml?type=models&amp;snapshot=2026-11-08T162034Z-1c05c652f6&amp;limit=2\" rel=\"self\" type=\"application/rss+xml\"/><item><title>LiquidAI: LFM3-1.7B</title><link>https://openrouter-data.pages.dev/api/v1/data?type=models&amp;snapshot=2026-11-08T162034Z-1c05c652f6</link><guid isPermaLink=\"false\">https://openrouter-data.pages.dev/snapshots/2026-11-08T162034Z-1c05c652f6/models/0</guid><pubDate>Fri, 06 Nov 2026 23:57:57 GMT</pubDate><description>A compact 1.7B-parameter text model with a 256K-token context, post-trained for agents, tool calling, and structured outputs. It reasons before it answers. Prompts and outputs may be retained and used...</description><category>models</category></item><item><title>LiquidAI: LFM3-1.7B (free)</title><link>https://openrouter-data.pages.dev/api/v1/data?type=models&amp;snapshot=2026-11-08T162034Z-1c05c652f6</link><guid isPermaLink=\"false\">https://openrouter-data.pages.dev/snapshots/2026-11-08T162034Z-1c05c652f6/models/1</guid><pubDate>Fri, 06 Nov 2026 23:57:57 GMT</pubDate><description>A compact 1.7B-parameter text model with a 256K-token context, post-trained for agents, tool calling, and structured outputs. It reasons before it answers. Prompts and outputs may be retained and used...</description><category>models</category></item></channel></rss>"
+                  },
+                  "newestBlogPosts": {
+                    "summary": "Actual blog_posts RSS with omitted sort/order",
+                    "description": "Real archived response from 2026-11-08T162034Z-1c05c652f6; request /rss.xml?type=blog_posts&snapshot=2026-11-08T162034Z-1c05c652f6&limit=2. Demonstrates automatic newest-first RSS ordering.",
+                    "value": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\"><channel><title>OpenRouter Data Archive — blog_posts</title><link>https://openrouter-data.pages.dev</link><description>Independent snapshot archive; source: https://openrouter.ai/blog/feed.xml; snapshot 2026-11-08T162034Z-1c05c652f6. Not operated by OpenRouter.</description><lastBuildDate>Sun, 08 Nov 2026 16:21:09 GMT</lastBuildDate><atom:link href=\"https://openrouter-data.pages.dev/rss.xml?type=blog_posts&amp;snapshot=2026-11-08T162034Z-1c05c652f6&amp;limit=2\" rel=\"self\" type=\"application/rss+xml\"/><item><title>Introducing the New Auto and Auto Code Routers</title><link>https://openrouter.ai/blog/announcements/auto-and-auto-code-routers/</link><guid isPermaLink=\"false\">https://openrouter-data.pages.dev/snapshots/2026-11-08T162034Z-1c05c652f6/blog_posts/0</guid><pubDate>Fri, 06 Nov 2026 00:00:00 GMT</pubDate><description>The next generation of Auto Router, rebuilt on a new technical foundation, plus Auto Code, a new router specialized for coding work. Both weigh eleven factors per request against live pricing, provider health, benchmarks, and cache state to pick a model and reasoning effort from the model pool your governance policies allow.</description><category>blog_posts</category></item><item><title>Build an AI Code Reviewer with OpenRouter</title><link>https://openrouter.ai/blog/tutorials/ai-code-review/</link><guid isPermaLink=\"false\">https://openrouter-data.pages.dev/snapshots/2026-11-08T162034Z-1c05c652f6/blog_posts/1</guid><pubDate>Sun, 01 Nov 2026 00:00:00 GMT</pubDate><description>Code reviewers that only read a Git diff have to guess whether a change breaks anything, and their fixes come back as prose you apply by hand. This guide builds a Python reviewer on the OpenRouter Responses API that uploads your changed files into a Linux sandbox, runs checks to confirm each bug, and returns validated patches. A review takes one to four minutes and costs $0.015 to $0.045.</description><category>blog_posts</category></item></channel></rss>"
                   }
                 }
               }
@@ -2889,8 +2894,30 @@
             "lang": "Shell",
             "label": "Filtered models RSS",
             "source": "curl \"https://openrouter-data.pages.dev/rss.xml?type=models&author=openai,anthropic&output_modality=text&limit=20\""
+          },
+          {
+            "lang": "Shell",
+            "label": "Latest archived blog posts first (default order)",
+            "source": "curl \"https://openrouter-data.pages.dev/rss.xml?type=blog_posts&limit=20\""
+          },
+          {
+            "lang": "Shell",
+            "label": "Explicit RSS publication order",
+            "source": "curl \"https://openrouter-data.pages.dev/rss.xml?type=status_incidents&sort=published_at&order=desc&limit=20\""
           }
-        ]
+        ],
+        "x-default-ordering": {
+          "models": "created desc",
+          "embedding_models": "created desc",
+          "eu_models": "created desc",
+          "image_models": "created desc",
+          "video_models": "created desc",
+          "model_rss": "published_at desc",
+          "blog_posts": "published_at desc",
+          "status_incidents": "published_at desc",
+          "other": "id asc",
+          "explicit_sort_without_order": "asc"
+        }
       }
     },
     "/docs/api/openapi.json": {

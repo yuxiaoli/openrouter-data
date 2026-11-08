@@ -26,3 +26,11 @@ test('failed latest attempt degrades health while data still uses the last succe
   const health=await handleRequest(new Request('https://example.test/healthz'),archive,Date.parse(failed.completed_at));
   expect(health.status).toBe(503); expect((await health.json()).status).toBe('degraded');
 });
+
+test('default model RSS orders by upstream creation time so recent models are visible',async()=>{
+  const rows=[{id:'test/a',name:'Old model',created:100},{id:'test/z',name:'Recent model',created:200}];
+  const archive:ArchiveStore={async read(path){return {ok:true,value:path==='index.json'?index:path.endsWith('manifest.json')?{...manifest,counts:{models:2},datasets:[{...manifest.datasets[0],record_count:2}]}:{data:rows}};}};
+  const response=await handleRequest(new Request('https://example.test/rss.xml?limit=1'),archive,Date.parse(summary.completed_at));
+  const xml=await response.text();
+  expect(xml).toContain('<title>Recent model</title>'); expect(xml).not.toContain('<title>Old model</title>');
+});

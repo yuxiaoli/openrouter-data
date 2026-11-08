@@ -41,7 +41,14 @@ function applicability(query:QueryInput, type:string):string|undefined {
 function xml(s:unknown):string { return String(s??'').replace(/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu,'').replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]!)); }
 
 export async function handleRequest(request:Request,store:ArchiveStore,now=Date.now()):Promise<Response> {
-  const url=new URL(request.url); const path=url.pathname; const params=url.searchParams;
+  const url=new URL(request.url); const path=url.pathname; const params=new URLSearchParams(url.search);
+  if(path==='/rss.xml' && !params.has('sort')) {
+    const type=params.get('type')??'models';
+    const chronological=['models','embedding_models','eu_models','image_models','video_models'].includes(type);
+    const feed=['model_rss','blog_posts','status_incidents'].includes(type);
+    params.set('sort',chronological?'created':feed?'published_at':'id');
+    if(!params.has('order')) params.set('order',chronological||feed?'desc':'asc');
+  }
   if(request.method==='OPTIONS') return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET, HEAD, OPTIONS','Access-Control-Allow-Headers':'Content-Type'}});
   if(!['GET','HEAD'].includes(request.method)) { const r=error('METHOD_NOT_ALLOWED','Use GET or HEAD.',405); r.headers.set('Allow','GET, HEAD, OPTIONS'); return r; }
   if(request.method==='HEAD') { const response=await handleRequest(new Request(request.url,{method:'GET'}),store,now); return new Response(null,{status:response.status,headers:response.headers}); }
