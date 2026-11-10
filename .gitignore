@@ -1,0 +1,10 @@
+# New snapshots keep original logical bytes in deterministic gzip siblings.
+# Existing tracked snapshots retain their original files unchanged.
+runs/*/*.json
+!runs/*/manifest.json
+!runs/*/query-manifest.json
+!runs/*/storage.json
+runs/*/raw/*
+!runs/*/raw/*.gz
+runs/*/chunks/**/*.json
+runs/*/shards/**/*.json
