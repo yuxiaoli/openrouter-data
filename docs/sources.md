@@ -1,12 +1,41 @@
 # OpenRouter 官方来源调查
 
-本文件记录项目建立时的来源调查，不是快照运行结果。实际采集时间、HTTP 结果、记录数、完整性及错误以每次快照的 manifest 为准。调查在 2026-11-08 16:00–16:10 UTC（北京时间 2026-11-09）通过无 Cookie、无 Authorization 的实际 GET 请求完成；计数会随官方目录变化。
+本文件保留项目建立时的来源调查，并记录 2026-11-10 对公开统计来源的修正。它不是快照运行结果：实际时间、HTTP 结果、记录数、完整性、partial/fallback 及错误以每次 manifest 为准。下文初始目录调查在 2026-11-08 16:00–16:10 UTC（北京时间 2026-11-09）通过无 Cookie、无 Authorization 的 GET 完成，所列计数只属于当时。
 
 本项目是独立的历史归档和查询服务，非 OpenRouter 官方服务。下列官方 URL 均为上游来源，不能作为本项目部署地址。保留上游字段、未知字段和 null；没有取得的内容不补造，不将目录中的摘要、瞬时指标或排行榜次序当成完整历史数据。
 
 公开归档存在一项明确的保真例外：官方 OpenAPI 的凭据样例触发了 GitHub GH013 推送保护，包含该样例的首次数据推送未成功。项目不绕过保护，公开副本会对凭据样例进行明确标记的脱敏，并在采集报告中记录脱敏说明。报告中的上游原始响应 SHA-256 用于标识实际取得的响应；归档 SHA-256 用于校验公开保存的脱敏副本，二者可能不同，不得把脱敏后的字节描述成上游原始字节。模型目录、价格和其它业务数据不因这项处理而补造或推断。
 
-## 建议每天归档的公开来源
+## 2026-11-10 修正：公开页面统计与认证 Data API 是不同来源
+
+初次探测遗漏了公开页面接口中的 `/v1/`：`/api/frontend/stats/...` 的 404 不能证明 `/api/frontend/v1/stats/...` 不公开；`/api/v1/datasets/...` 的 401 也不能推广为所有排名、会话分桶、benchmarks 或任务统计均需认证。本轮根据官方公开网页及实际引用脚本发现准确 URL，再以无 Cookie、无 Authorization 的 GET 验证。完整路径、参数、响应结构、窗口、观察计数和单位证据见 [source-audit-2026-11-10.md](source-audit-2026-11-10.md)。
+
+API 1.1 在原 16 个数据集之外增加以下 12 类，共 28 类。多数新来源是未收录于官方对外 OpenAPI 的公开页面接口，可能变更；每次运行仍必须校验结构并记录精确请求、HTTP 结果和范围，不能把研究时的 200 视作每日同步永远成功。
+
+| 新数据集 | 已验证来源族（origin 为 `https://openrouter.ai`） | 内容与边界 |
+| --- | --- | --- |
+| `public_model_rankings` | `/api/frontend/v1/rankings/models` | day/week/month × tokens/tokens_excl_byok/requests/spend；保留 native model/variant/date、各类用量、change 与 rankingMetricValue。窗口聚合不拆称每日流水；spend 单位未声明时不猜美元。 |
+| `public_ranking_history` | `/rankings/model-rankings-chart`、author-market-share、open-closed、tools、images、image-output、rerank-documents、语言、context、STT、video 图表及 `/rankings/benchmarks`，均在 `/api/frontend/v1` 下 | 完整原生数组/父对象、cachedAt、Others、抽样小数、benchmark maps；只覆盖返回窗口，不补成任意年份的逐模型历史。 |
+| `public_performance` | `/api/frontend/v1/rankings/performance` | 原生 request_count、p50_latency/p50_throughput、provider 与价格字段；窗口及若干单位未声明，标 unspecified，null 不变零。 |
+| `public_apps` | `/api/frontend/v1/apps/marketplace/marketplace` | 整体 popular/trending/leaderboards/globalRankingMap，包括全部原生 app 对象；有界公开选择，不是所有 app。 |
+| `public_app_rankings` | `/api/frontend/v1/rankings/apps`、marketplace globalRankingMap、`/apps/marketplace/category` 与 category-chart | day/week/month、tokens/requests、四 group、上游返回的正常/low-count subcategory；原榜单 rank 原样保留，忽略 limit/offset 的接口不伪称支持翻页。 |
+| `public_model_activity` | `/api/frontend/v1/stats/model-activity` | 当前目录和公开榜实际发现的 canonical/variant 逐项请求；整份 analytics/cachedAt，保留缓存/BYOK/tool/multimodal 字段。合法空结果不当作零流量。 |
+| `public_model_apps` | `/api/frontend/v1/stats/top-apps-for-model` | 整份 top_apps/top_apps_chart/model_chart/cachedAt；两类 chart 是原生 date + analytics 行，不强制转换为 x/ys。app_id 可为数字，token 字符串不强转损失精度。 |
+| `public_session_cost` | `/api/frontend/v1/rankings/session-cost` | 公开 harness/model 会话分桶、medianUsd、windowDays/windowEnd；是发布的聚合样本，不是当前账户或个体会话记录。 |
+| `public_task_mix` | `/api/frontend/v1/rankings/task-spend` | spend/token 分类份额、模型 share、deltaPp 和原生窗口；比例/百分点不是绝对花费或 token 数。 |
+| `public_discovery` | `/api/frontend/v1/rankings/discovery`、`/api/frontend/v1/rankings/routers`、`/api/frontend/v1/all-providers`、`/api/frontend/v1/catalog/providers`、`/api/frontend/v1/stats/provider-token-chart` | 整体发现/路由器摘要、公开 provider 政策与按真实 slug 发现的 provider 图表；不同 section 不可相加当全平台总量。 |
+| `public_modality_statistics` | `/api/frontend/v1/rankings/modality-chart`、modality-models、modality-category-options/rankings/share | 已验证 text/image/embeddings/rerank/video/speech/decisions/transcription；模型榜 day/week/month，维度与类别来自真实 options。请求指标与 generated 指标分开；不因查询传了模态就自行删改返回的跨模态系列。 |
+| `public_model_observations` | `/api/frontend/v1/stats/listed-pricing`、effective-pricing、model-uptime-recent、uptime-recent、provider-token-chart、top-colos-for-model | 每模型完整价格、近期可用性、provider 系列与地域对象。provider 来自真实 providerSlug，不能把模型作者假当 hosting provider；原始单位和时间窗不擅自推断。 |
+
+上表缩写路径的完整 URL 以每条 `_source.source_url` / manifest 请求记录及复核文档为准。模型 canonical_slug 不包含 free/batch 变体时，必须保留实际 variant 参数；公开榜补发现只能使用原生 `model_permaslug` 与 `variant/variant_permaslug`，缺身份的行不编造模型请求。模型详情尝试覆盖“当前目录 + 已获取公开榜中发现的身份”，不是全部曾存在模型或全部私有流量。
+
+历史图表中的旧 `date/x`、cachedAt、windowEnd 与本项目采集时间是不同概念：当前取得的 53 周图表仍是当前快照里的滚动视图，不能生成 53 个并不存在的历史快照。JSON 保留完整 payload，RSS 提供摘要、来源/窗口/单位和完整 JSON 链接；catalog/feeds/overview 用于发现这些来源。
+
+单位按可验证证据记录：模型目录 USD/token、session medianUsd 的 USD、原生 seconds/characters/documents/tokens/requests、份额 fraction 与 deltaPp 百分点；未明确的 p50、价格分母、图表 generated 值和聚合时区保持 unspecified/null。不同模态的图片数、请求数、token、视频秒/小时、字符、文档及比例不可相加，也不从标价反推真实收入或流量。
+
+按用户当前要求，认证 Data API **暂不启用**。公开匿名聚合与认证导出分别记录；没有因发现公开统计而启用个人密钥、请求账户 activity/credits/generations，或把私人用量发布到此归档。服务遇到不应公开的 authenticated 数据会拒绝提供，而不是自动降级为公开数据。
+
+## 初次调查：目录、内容与文档来源（2026-11-08）
 
 | 数据 | 官方 URL | 调查结果与覆盖范围 |
 | --- | --- | --- |
@@ -31,24 +60,24 @@
 
 `GET /api/v1/model/{author}/{slug}` 也公开可读；抽查 GPT-4o 与全模态目录对应对象字段一致，benchmarks 已包含在目录内，不必重复请求所有单项。目录及每模型端点均是采集时所见，无法重建项目启动前的完整目录/价格历史。
 
-## 无法公开采集及未采集部分
+## 认证端点与其余缺口（初次 HTTP 结果保留，解释已按 1.1 修正）
 
 | 来源或类别 | 实测或文档限制 | 处理原则 |
 | --- | --- | --- |
-| `/api/v1/datasets/rankings-daily` | 无认证 401；官方 Data API 要求有效 OpenRouter API key | 不伪造排名、token 数或历史；记录 unavailable。官方返回范围是公开流量 top 50 模型加 other，排除私有模型、私有端点及 ZDR 流量，并非所有 OpenRouter 流量。 |
-| `/api/v1/datasets/app-rankings` | 无认证 401；需 API key；仅公开可见 app，别名可归并 | 不把网页 top app 摘要扩展成完整数据集。 |
-| `/api/v1/datasets/session-cost` | 无认证 401；需 API key | 未取得真实 session 统计，不从模型标价推算用户会话成本。 |
-| `/api/v1/benchmarks` | 无认证 401；需 API key | 通用目录中公开的 benchmarks 字段可如实保留，不能宣称取得统一 benchmark 数据集所有记录。 |
-| `/api/v1/classifications/task` | 无认证 401；需 API key | 未取得分类份额和相关模型统计。 |
+| `/api/v1/datasets/rankings-daily` | 无认证 401；官方 Data API 要求有效 OpenRouter API key | 此认证导出未启用；与 `public_model_rankings` 的公开页面窗口是不同来源。其 top 50 + other 范围及私有/ZDR排除规则不得推广到别的来源。 |
+| `/api/v1/datasets/app-rankings` | 无认证 401；需 API key；仅公开可见 app，别名可归并 | 此认证导出未启用；另行保留 `public_apps/public_app_rankings` 的有界原生页面结果，不冒充完整 app 数据。 |
+| `/api/v1/datasets/session-cost` | 无认证 401；需 API key | 此认证导出未启用；`public_session_cost` 来自另一个匿名页面聚合，不能因这里401而宣称全部会话分桶不可得。 |
+| `/api/v1/benchmarks` | 无认证 401；需 API key | 此认证接口未启用；models 中公开的 benchmarks 与 `/api/frontend/v1/rankings/benchmarks` 原对象另存，不宣称取得认证全集。 |
+| `/api/v1/classifications/task` | 无认证 401；需 API key | 此认证接口未启用；`public_task_mix` 另存公开的分类份额，不包含私人任务日志。 |
 | `/api/v1/parameters/openai/gpt-4o` | 无认证 401；当前官方 OpenAPI 未列此路径 | 支持参数从公开模型/端点目录取得，不依赖该历史或未文档路径。 |
 | `/api/v1/tools` | 无认证 401；OpenAPI 标记 bearer | 不冒充公共工具完整目录。 |
 | 账户 activity / analytics / credits / generation、private provider/endpoint、keys、workspace、组织及日志 | 账户或管理权限数据；与公共目录性质不同 | 不收集或公开私人账户数据，也不将该数据视为全站数据。 |
 | `https://status.openrouter.ai/api/v2/summary.json` | 403 AccessDenied | 不假定其采用 Statuspage API；归档真实可读的官方状态 RSS，并明确事故历史窗口限制。 |
 | TTS/STT/rerank/decisions 专用 GET 目录 | 当前 OpenAPI 无专用目录；探测 `/api/v1/audio/speech/models`、`/api/v1/audio/transcriptions/models`、`/api/v1/rerank/models`、`/api/v1/decisions/models`、`/api/alpha/decisions/models` 均 404 | 使用 `models?output_modalities=all` 的对应模态及通用端点；不创造不存在的上游 URL。 |
-| 未文档 frontend 排行 JSON | 探测 `/api/frontend/stats/{models,leaderboard,model,rankings}` 均 404 | 不依赖猜测接口，不绕过正式 Data API 的认证。公开 rankings HTML 是展示页面，不代表全部结构化历史。 |
+| 初次错误路径探测 | `/api/frontend/stats/{models,leaderboard,model,rankings}` 当时均 404 | 只说明这些准确路径404；2026-11-10 已从官方网页发现含 `/v1/` 的真实匿名 JSON，不再用该初次结果推断全部 frontend 统计不可得。 |
 | 完整实时流量、请求内容、所有 provider 的长期性能、模型上线前历史 | 公开目录/RSS不提供 | 把缺口写入来源元数据，null 保持 null；采样窗口指标只能解释为官方声明的窗口。 |
 
-若将来配置有效 API key，需单独设计认证数据采集范围、限流和引用，不能默认把私人账户数据发布。官方 Data API 文档标注每 key 每分钟 30 次、每账户每天 500 次；聚合数据采用 CC BY 4.0，须保留 `meta` 以及对应来源/citation，并提示其可随上游重述。文档另说明此数据面向分析和报告，不能把本项目描述成替代官方的免费 Data API。
+当前不配置或启用 Data API。将来如用户另行授权，仍需单独设计认证范围、访问隔离、限流与引用，个人凭据的存在不等于获准公开私人数据。官方 Data API 文档描述的配额、CC BY 4.0 与 citation 要求只按其适用范围解释，不能不加判断套用于所有未文档 frontend 页面响应，也不能把本项目描述成官方 Data API 的完整免费替代品。
 
 ## 官方依据
 

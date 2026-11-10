@@ -15,7 +15,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 90
     steps:
       - name: Check out collector code
         uses: actions/checkout@v4
@@ -41,9 +41,13 @@ jobs:
         run: |
           set -o pipefail
           npm run sync -- --output data 2>&1 | tee sync.log
+      - name: Verify immutable bytes and publishable gzip storage
+        id: verify_archive
+        if: ${{ always() && steps.collect.outcome != 'skipped' }}
+        run: npm run verify:archive -- data --require-packed-latest --latest-only
       - name: Commit both successful and failed attempt reports
         id: publish
-        if: ${{ always() && steps.collect.outcome != 'skipped' }}
+        if: ${{ always() && steps.collect.outcome != 'skipped' && steps.verify_archive.outcome == 'success' }}
         working-directory: data
         shell: bash
         run: |
@@ -74,7 +78,9 @@ jobs:
             const manifestPath = safeId ? `data/runs/${id}/manifest.json` : '';
             const manifest = manifestPath ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : null;
             const valid = !!attempt && manifest?.id === id && manifest.status === attempt.status &&
-              (attempt.status === 'success' ? index.last_success === id : index.last_success !== id);
+              (attempt.status === 'success' ? index.last_success === id && index.latest_snapshot === id :
+                attempt.status === 'partial' ? index.last_success !== id && index.latest_snapshot === id :
+                index.last_success !== id && index.latest_snapshot !== id);
             report = {
               snapshot: id || null,
               collection: process.env.COLLECT_OUTCOME,
@@ -82,6 +88,9 @@ jobs:
               valid_attempt: valid,
               status: attempt?.status ?? null,
               last_success: index.last_success,
+              latest_snapshot: index.latest_snapshot,
+              fresh_datasets: manifest?.datasets.filter(d => d.status === 'ok').length ?? 0,
+              stale_datasets: manifest?.datasets.filter(d => d.status === 'failed' && d.fallback).map(d => ({id:d.id, snapshot:d.fallback.snapshot, collected_at:d.fallback.collected_at})) ?? [],
               errors: attempt?.errors ?? ['Collector did not produce an identifiable attempt.'],
             };
             fs.appendFileSync(process.env.GITHUB_OUTPUT, `snapshot=${id}\nvalid_attempt=${valid}\nstatus=${attempt?.status ?? ''}\nmanifest=${manifestPath}\n`);
@@ -96,8 +105,9 @@ jobs:
           }
           fs.writeFileSync('sync-report.json', JSON.stringify(report, null, 2));
           const success = report.collection === 'success' && report.publication === 'success' && report.valid_attempt && report.status === 'success';
+          const result = success ? 'success' : report.valid_attempt && report.publication === 'success' && report.status === 'partial' ? 'PARTIAL — failed sources retain explicitly dated stale data' : 'FAILED';
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
-            `\n## Archive publication\n\nResult: **${success ? 'success' : 'FAILED'}**\n\n` +
+            `\n## Archive publication\n\nResult: **${result}**\n\n` +
             '```json\n' + JSON.stringify(report, null, 2) + '\n```\n\n' +
             'Failed collection attempts are preserved on the data branch; they do not advance last_success. GitHub raw and service caches may take several minutes to expose a new index.\n');
           NODE
@@ -114,7 +124,7 @@ jobs:
             data/index.json
             ${{ steps.report.outputs.manifest }}
       - name: Verify the published snapshot on Cloudflare
-        if: ${{ steps.collect.outcome == 'success' && steps.publish.outcome == 'success' && steps.report.outputs.valid_attempt == 'true' && steps.report.outputs.status == 'success' }}
+        if: ${{ always() && steps.publish.outcome == 'success' && steps.report.outputs.valid_attempt == 'true' && (steps.report.outputs.status == 'success' || steps.report.outputs.status == 'partial') }}
         env:
           SNAPSHOT_ID: ${{ steps.report.outputs.snapshot }}
         shell: bash
@@ -138,6 +148,6 @@ jobs:
         shell: bash
         run: |
           if [ "$COLLECT_OUTCOME" != success ] || [ "$PUBLISH_OUTCOME" != success ] || [ "$VALID_ATTEMPT" != true ] || [ "$SNAPSHOT_STATUS" != success ]; then
-            echo '::error::OpenRouter synchronization failed. See the collector summary and sync-report artifact; the last successful data is retained.'
+            echo '::error::OpenRouter synchronization is partial or failed. Fresh source results and explicit stale references are archived; see the manifest and summary. A failed source is never marked fresh.'
             exit 1
           fi

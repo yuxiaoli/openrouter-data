@@ -1,5 +1,7 @@
 # 运行与验收
 
+历史验收记录按执行当时的版本、条数和覆盖保留；不能用 1.1 的新能力改写首次 16 类验收。2026-11-10 的来源修正、自然定时观察和 1.1 执行状态追加在本文末尾。
+
 ## 架构与授权范围
 
 - 代码仓库：<https://github.com/yuxiaoli/openrouter-data>，默认分支 `main`。
@@ -7,6 +9,7 @@
 - 服务：Cloudflare Pages advanced mode，地址 <https://openrouter-data.pages.dev>；构建产物 `dist/_worker.js`。
 - 上游数据和公开可获取性见 [sources.md](sources.md)，实际运行范围、采集时间及错误以 manifest 为准。
 - 本机已存在 Cloudflare Pages 授权。每日同步无需 Cloudflare 凭据，只用 GitHub 内置 token；不在仓库、日志、URL 中写入私人令牌。
+- API 1.1 的公开数据目标共 28 类；来源、能力与订阅通过 `/api/v1/catalog`、`/feeds.json`、`/rss.xml?type=overview` 发现。认证 Data API 按用户当前要求暂不启用。
 
 现有相关仓库已排查：GitHub 无 OpenRouter 专用仓库；既有 RSS 目录只引用官方 JSON 和 RSS；`cf-feeds` 为订阅监控，`llm-gateway-providers` 使用 models.dev。Cloudflare Pages 列表无同类 OpenRouter 项目。现有 OAuth 没有 Workers scope，未能穷尽 Workers 服务目录，因此不把该部分核查描述为完成。
 
@@ -19,9 +22,13 @@ gh workflow run sync.yml --repo yuxiaoli/openrouter-data --ref main
 gh run list --repo yuxiaoli/openrouter-data --workflow sync.yml --limit 10
 ```
 
-任务先检出 main、安装锁定依赖并执行 `npm run check`，再将 data 分支检出到 `data/`。`npm run sync -- --output data` 创建不可覆盖的独立运行目录。失败退出非零，仍提交新 manifest 和索引；旧成功指针保持不变。推送失败也使 job 失败。Actions step summary 展示来源状态及发布结果，artifact 包含日志、索引和该次 manifest，保留 14 天。
+任务先检出 main、安装锁定依赖并执行 `npm run check`，再将 data 分支检出到 `data/`。`npm run sync -- --output data` 创建不可覆盖的独立运行目录。success 推进整体 `last_success`；有新成功来源但部分失败时记录 partial，推进最近可用 `latest_snapshot`，整体成功指针保持旧值；逐数据集 `dataset_last_success` 仅指向该来源真实通过校验的运行。完全失败不推进最近可用结果。partial / failed 均退出非零，仍提交 manifest 和索引；推送失败同样使 job 失败。step summary 展示新鲜/旧结果与错误，日志、索引和最近 manifest artifact 保留 14 天。
 
-成功归档后会对 Cloudflare 服务执行 smoke，指定该次 snapshot ID，覆盖 JSON、RSS、OpenAPI 与多维筛选；每 30 秒重试，最多约六分钟，容纳 GitHub raw 缓存传播。线上验证失败不删除已归档的数据，job 仍报告失败。服务不会依据 HTTP 200 自行判定采集完整，必须查看 manifest 和健康状态。
+success / partial 归档后会对 Cloudflare 服务执行 smoke，指定该次 snapshot ID，覆盖 JSON、RSS、OpenAPI 与多维筛选；每 30 秒重试，最多约六分钟，容纳 GitHub raw 缓存传播。partial 即使可用来源通过线上校验，最终 job 仍明确失败，不冒称整体完整。线上验证失败不删除已归档数据。HTTP 200 只表示该请求可读取，不能代替 manifest 完整性与健康检查。
+
+旧数据 fallback 返回 `meta.status=stale`，保留实际 `meta.snapshot`、`data_collected_at`、原始来源与覆盖；`attempt_snapshot` / `attempt_completed_at` 单独说明本次失败尝试。RSS 同样标明旧数据、实际观测时间和错误，没有 fallback 时返回 503，不发布空成功。健康检查会在 partial / failed 或最近可用结果超过 36 小时时降级。
+
+`schema_version: 1` 保持不变，新增 latest/逐数据集引用、fallback、窗口/单位及 chunks 索引为兼容字段；API 版本为 1.1，路径仍是 `/api/v1/`。旧 manifest 中没有的新数据集保持不可用，不生成虚假的早期采集记录。
 
 ## 本机恢复
 
@@ -38,9 +45,13 @@ npm run sync -- --output data
 失败诊断顺序：
 
 1. 查看 Actions 的采集日志、step summary、sync-report artifact，确认网络、HTTP、结构、条数或分页完整性错误。
-2. 查看 `data/runs/<id>/manifest.json` 的来源状态及缺口，并核对 `last_success` 仍指向有效旧运行。
+2. 查看 `data/runs/<id>/manifest.json` 的来源状态及缺口；partial 时分别检查 latest_snapshot、last_success、dataset_last_success 和每个 fallback 的真实时间，不能把可用旧数据当成新采集。
 3. 对上游实际返回做最小复查。官方接口变更时修改采集器及契约、运行测试，再创建新的真实运行；不补造缺失数据。
 4. 归档成功但线上不可见时，检查 GitHub raw 和服务缓存；使用精确 snapshot ID 排除 latest 缓存差异。
+
+大数据集的 `<dataset>.json` 可能是 `{storage:"chunked",record_count,chunks}` 索引而非完整行数组。按 manifest 的 `chunks/chunk_counts/chunk_sha256s` 读取与校验，按 `model_chunks` 优先定位模型；默认 id 升序无过滤分页只加载相关块，广域统计可能读取更多块。不要把索引当成只有一个数据行的空数据集。
+
+原始归档可从 GitHub 固定 data 提交的 `runs/<snapshot>/<raw_path>` 直接取得；报告 pages 可列多个 raw 文件。逐请求 NDJSON 保存 body_base64，较大响应通过 body_base64_chunks 引用字节片段；读取时按记录重建后核验对应 SHA。`npm run verify:archive -- data` 验证本地真实归档，不触发采集。明确脱敏时 `sha256` 对应公开字节，`original_sha256` 仅标识未公开原响应，二者不能混用。
 
 ## 部署与回滚
 
@@ -90,3 +101,33 @@ npm run smoke -- https://openrouter-data.pages.dev
 最初未经脱敏的官方 OpenAPI 凭据样例触发 GitHub GH013，数据发布被拒，未绕过保护。该未公开运行仅保留本机；修复后使用新的真实采集时间生成上述公开快照，原响应哈希、归档哈希和脱敏规则/次数均写入 manifest。第一次 Actions 采集和推送成功后，验收脚本发现 OpenAPI 解析器原地修改对象导致别名比较失败；该运行取消验证并保留已采集数据，修复脚本后重新运行完整成功，没有把失败验收记为成功。
 
 未完成的范围只限明确不可公开取得的内容：需要 OpenRouter 授权的排名、应用统计、会话成本、统一 benchmarks、任务分类、工具及私人账户数据；完整事故/长期性能/启动前历史；未具备权限的 Cloudflare Workers 全目录核查。具体来源及限制见 [sources.md](sources.md)。
+
+## 2026-11-10 自然定时观察（原 16 类版本）
+
+本节是既有服务的只读核查，未重建仓库、手动 dispatch、修改 cron 或改变授权。每日 workflow 仍为 active，配置 `23 1 * * *`（北京 09:23）。[自然定时运行 42782949976](https://github.com/yuxiaoli/openrouter-data/actions/runs/42782949976) 的 event 为 schedule，实际在 2026-11-10 08:28:45 UTC（北京 16:28:45）启动，08:29:28 UTC 完成，结论 success；这里只记录实际时间，不猜测与计划时刻差异的原因。
+
+该次生成 `2026-11-10T082859Z-1ed5a98882`，采集区间 08:28:59.398–08:29:14.216 UTC，日期为 UTC 2026-11-10。data 头为 [`1d2513a7c1c8861fc66dc5051c397e498cb741ef`](https://github.com/yuxiaoli/openrouter-data/commit/1d2513a7c1c8861fc66dc5051c397e498cb741ef)，当时 index 保留 6 次真实运行；16 公开来源均 ok，models/model_rss 为 711，endpoints 为 1774，ZDR 为 1110。该观察属于新增 12 类发布之前，不把它算成 28 类新版验收。
+
+当前进程及工作区未发现已配置的 OpenRouter credential，仓库 Actions secret 名称清单为空；这不是对机器所有凭据存储的穷尽检查，也没有读取、创建或复制密钥内容。GitHub 仓库授权和已有 Cloudflare Pages 授权不能当作 OpenRouter Data API 授权。
+
+## 2026-11-10 来源更正与 API 1.1 本轮记录
+
+对“首次验收记录”最后一段的**当前范围更正**：当时认证 `/api/v1/datasets/...` 的 401 与错误 `/api/frontend/stats/...` 路径的 404，不代表全部排名/会话/benchmark/任务统计都需要认证。此次从官方公开网页发现并匿名验证 `/api/frontend/v1/...`；详见 [独立来源复核](source-audit-2026-11-10.md) 和 [sources.md](sources.md)。原 16 类历史记录保持不改，新版增加 12 类公开统计；认证 Data API 仍按用户要求暂不启用，私人账户数据仍隔离。
+
+新版通过 catalog、feeds 和 overview RSS 发现全部 28 类，RSS 附字段摘要、来源/单位/窗口、真实观测时间与完整 JSON；大型 native payload、原始响应和未知字段留在 JSON/归档。既有 endpoints 已保存 uptime/latency/throughput 原对象，但本轮研究所见 latency/throughput 可能全 null，不能声称这些端点已有非空性能测量；另行公开 performance 与 benchmark 视图保留原生值、null、窗口/单位未知说明，不推断价格分母或货币。
+
+本轮已观察到包含 44 项测试的阶段性本地检查通过；随后纯公开来源 parser 已通过其红绿回归与匿名真实结构核查。此处记录阶段性证据，不把它替代最终 check/build、真实归档完整性或线上验收。
+
+文档定稿时，API 1.1 的单次真实采集已启动，尚未取得完整结束和发布结果。以下证据由最终实际执行结果追加，不预填成功、记录数或部署版本：
+
+| 验收项 | 当前记录要求 |
+| --- | --- |
+| 最终本地验证 | check 的测试数与结果、OpenAPI 路径/28 类校验、build 结果 |
+| 真实采集 | snapshot ID、UTC 起止、success/partial/failed、28 类各来源条数及错误/空/404/覆盖数 |
+| 新鲜度与恢复 | latest_snapshot、last_success、逐数据集成功引用；如有 fallback，记录真实旧快照/时间与显式 stale 验证 |
+| 归档 | 固定 data 提交、chunks/raw/request 字节校验结果；脱敏规则、原/归档 SHA 与实际次数 |
+| 线上部署 | 对应代码提交、Cloudflare 部署版本及生产地址 |
+| 线上功能 | catalog/feeds/overview、JSON/RSS/OpenAPI、统计窗口/metric/模态/模型查询、分页、历史、错误参数、HEAD/OPTIONS/POST |
+| 每日任务 | 仍 enabled 且 cron 09:23；后续运行结果与自然触发事件据实记录，不把手动运行冒称定时 |
+
+公开榜中的退役模型仅按原生 canonical/variant 身份补发现并尝试其当前可读窗口；合法空和 404 明确记录，不补造零用量或早期 snapshot。图片数、request、token、文档、视频秒/小时、字符、份额与百分点不可相加；没有声明的窗口、时区、performance/价格单位保留 unknown/unspecified。

@@ -33,3 +33,25 @@ test('negative upstream price sentinels remain unknown for price filters and sor
   expect(queryRows(rows,new URLSearchParams('free=false')).data).toEqual([rows[1]]);
   expect(queryRows(rows,new URLSearchParams('sort=pricing.prompt')).data).toEqual([rows[1],rows[0]]);
 });
+
+test('public ranking queries preserve native values and filter the source window and metric before paging',()=>{
+  const rows=[
+    {model_permaslug:'test/one',date:'2026-11-09',rankingMetricValue:200,prompt:null,_source:{window:'week',view:'week',metric:'tokens'}},
+    {model_permaslug:'test/two',date:'2026-11-09',rankingMetricValue:100,prompt:50,_source:{window:'week',view:'week',metric:'tokens'}},
+    {model_permaslug:'test/one',date:'2026-11-09',rankingMetricValue:900,_source:{window:'day',view:'day',metric:'tokens'}},
+  ];
+  expect(queryRows(rows,new URLSearchParams('window=week&metric=tokens&view=week&since=2026-11-01&until=2026-11-10&sort=rankingMetricValue&order=desc&limit=1'))).toEqual({data:[rows[0]],total:2,limit:1,offset:0});
+  expect(rows[0]!.prompt).toBeNull();
+});
+
+test('public numeric application identities are queryable without changing their native type',()=>{
+  const rows=[{app_id:42,name:'Public app',_source:{window:'week'}}];
+  expect(queryRows(rows,new URLSearchParams('app=42')).data).toEqual(rows);
+  expect(typeof rows[0]!.app_id).toBe('number');
+});
+
+test('performance provider filters use the two native best-provider observations without merging their meaning',()=>{
+  const rows=[{slug:'test/model',model_permaslug:'test/model',best_latency_provider:'host-a',best_throughput_provider:'host-b',p50_latency:null,p50_throughput:123}];
+  expect(queryRows(rows,new URLSearchParams('provider=host-b')).data).toEqual(rows);
+  expect(dimensions(rows,Query.parse({dimension:'provider'})).data).toEqual([{value:'host-a',count:1},{value:'host-b',count:1}]);
+});
