@@ -1,0 +1,415 @@
+{
+  "id": "2026-11-10T082859Z-1ed5a98882",
+  "date": "2026-11-10",
+  "started_at": "2026-11-10T08:28:59.398Z",
+  "completed_at": "2026-11-10T08:29:14.216Z",
+  "status": "success",
+  "counts": {
+    "models": 711,
+    "providers": 121,
+    "embedding_models": 40,
+    "image_models": 63,
+    "video_models": 33,
+    "eu_models": 78,
+    "zdr_endpoints": 1110,
+    "model_count": 1,
+    "model_rss": 711,
+    "blog_posts": 166,
+    "status_incidents": 6,
+    "upstream_openapi": 1,
+    "docs_index": 1,
+    "site_index": 1,
+    "endpoints": 1774,
+    "image_endpoints": 67,
+    "authenticated_data": 0
+  },
+  "errors": [],
+  "schema_version": 1,
+  "datasets": [
+    {
+      "id": "models",
+      "source_url": "https://openrouter.ai/api/v1/models?output_modalities=all",
+      "collected_at": "2026-11-10T08:28:59.531Z",
+      "status": "ok",
+      "record_count": 711,
+      "coverage": "All output modalities explicitly requested; public currently listed models, not retired or private models.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/models.json",
+      "sha256": "42039f59e5899553641c1df48fdf542e096a77c017ab4dc78f1a83e688d8ca15",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/api/v1/models?output_modalities=all",
+          "collected_at": "2026-11-10T08:28:59.531Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/models.json",
+          "sha256": "42039f59e5899553641c1df48fdf542e096a77c017ab4dc78f1a83e688d8ca15"
+        }
+      ]
+    },
+    {
+      "id": "providers",
+      "source_url": "https://openrouter.ai/api/v1/providers",
+      "collected_at": "2026-11-10T08:28:59.508Z",
+      "status": "ok",
+      "record_count": 121,
+      "coverage": "Public provider directory; null policy, headquarters and datacenter values remain null.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/providers.json",
+      "sha256": "bc7a0e79cc53f83c66abbec0ef9a8ea15a80826a70dba6755f75223f8813f74d",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/api/v1/providers",
+          "collected_at": "2026-11-10T08:28:59.508Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/providers.json",
+          "sha256": "bc7a0e79cc53f83c66abbec0ef9a8ea15a80826a70dba6755f75223f8813f74d"
+        }
+      ]
+    },
+    {
+      "id": "embedding_models",
+      "source_url": "https://openrouter.ai/api/v1/embeddings/models",
+      "collected_at": "2026-11-10T08:28:59.512Z",
+      "status": "ok",
+      "record_count": 40,
+      "coverage": "Dedicated embeddings catalogue; can differ from the all-modality catalogue.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/embedding_models.json",
+      "sha256": "094994a8619b61edf5e77e6ec4119aca9d8ce17272808642ffac9fca847691c7",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/api/v1/embeddings/models",
+          "collected_at": "2026-11-10T08:28:59.512Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/embedding_models.json",
+          "sha256": "094994a8619b61edf5e77e6ec4119aca9d8ce17272808642ffac9fca847691c7"
+        }
+      ]
+    },
+    {
+      "id": "image_models",
+      "source_url": "https://openrouter.ai/api/v1/images/models",
+      "collected_at": "2026-11-10T08:29:00.117Z",
+      "status": "ok",
+      "record_count": 63,
+      "coverage": "Dedicated image catalogue including structured parameter capabilities and endpoint links.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/image_models.json",
+      "sha256": "d84a2526d5200d83bf4d72b6df7f7cea72a23b84f7ebb288bc1957049ed59c02",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/api/v1/images/models",
+          "collected_at": "2026-11-10T08:29:00.117Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/image_models.json",
+          "sha256": "d84a2526d5200d83bf4d72b6df7f7cea72a23b84f7ebb288bc1957049ed59c02"
+        }
+      ]
+    },
+    {
+      "id": "video_models",
+      "source_url": "https://openrouter.ai/api/v1/videos/models",
+      "collected_at": "2026-11-10T08:28:59.544Z",
+      "status": "ok",
+      "record_count": 33,
+      "coverage": "Dedicated video catalogue including supported durations, resolutions and SKU prices.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/video_models.json",
+      "sha256": "695d00cbdfaf920eb16bf573b0d7ade2ab25e39a821e5d056bfb551819728325",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/api/v1/videos/models",
+          "collected_at": "2026-11-10T08:28:59.544Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/video_models.json",
+          "sha256": "695d00cbdfaf920eb16bf573b0d7ade2ab25e39a821e5d056bfb551819728325"
+        }
+      ]
+    },
+    {
+      "id": "eu_models",
+      "source_url": "https://eu.openrouter.ai/api/v1/models?output_modalities=all",
+      "collected_at": "2026-11-10T08:29:00.225Z",
+      "status": "ok",
+      "record_count": 78,
+      "coverage": "EU hostname public catalogue, not proof of each endpoint compliance or all EU usage.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/eu_models.json",
+      "sha256": "148dee3a645afae946a0cce77ddeff5fa13ee5c87ddca7853842738f4e9de6a1",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://eu.openrouter.ai/api/v1/models?output_modalities=all",
+          "collected_at": "2026-11-10T08:29:00.225Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/eu_models.json",
+          "sha256": "148dee3a645afae946a0cce77ddeff5fa13ee5c87ddca7853842738f4e9de6a1"
+        }
+      ]
+    },
+    {
+      "id": "zdr_endpoints",
+      "source_url": "https://openrouter.ai/api/v1/endpoints/zdr",
+      "collected_at": "2026-11-10T08:28:59.724Z",
+      "status": "ok",
+      "record_count": 1110,
+      "coverage": "Public zero-data-retention endpoint listing as reported by OpenRouter.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/zdr_endpoints.json",
+      "sha256": "cd325c0616c2927c22d8821850d423a8d156aa06bff9ca435623968e791987a6",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/api/v1/endpoints/zdr",
+          "collected_at": "2026-11-10T08:28:59.724Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/zdr_endpoints.json",
+          "sha256": "cd325c0616c2927c22d8821850d423a8d156aa06bff9ca435623968e791987a6"
+        }
+      ]
+    },
+    {
+      "id": "model_count",
+      "source_url": "https://openrouter.ai/api/v1/models/count?output_modalities=all",
+      "collected_at": "2026-11-10T08:28:59.753Z",
+      "status": "ok",
+      "record_count": 1,
+      "coverage": "All-modality model count at its own request time; requests are not an atomic upstream transaction.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/model_count.json",
+      "sha256": "480054110c31e39f52e9eff4a4213e5ed28bd302b55e8c1f35cf4eeba397404a",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/api/v1/models/count?output_modalities=all",
+          "collected_at": "2026-11-10T08:28:59.753Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/model_count.json",
+          "sha256": "480054110c31e39f52e9eff4a4213e5ed28bd302b55e8c1f35cf4eeba397404a"
+        }
+      ],
+      "catalogue_count": 711,
+      "count_matches_catalogue": true
+    },
+    {
+      "id": "model_rss",
+      "source_url": "https://openrouter.ai/api/v1/models?use_rss=true&output_modalities=all",
+      "collected_at": "2026-11-10T08:28:59.855Z",
+      "status": "ok",
+      "record_count": 711,
+      "coverage": "Official current model feed window. Item publication time is upstream time, not collection time.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/model_rss.xml",
+      "sha256": "85d023fc463632a8a2043a9e03b30bb1285addbcd8bf364ae2920fda84649d71",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/api/v1/models?use_rss=true&output_modalities=all",
+          "collected_at": "2026-11-10T08:28:59.855Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/model_rss.xml",
+          "sha256": "85d023fc463632a8a2043a9e03b30bb1285addbcd8bf364ae2920fda84649d71"
+        }
+      ]
+    },
+    {
+      "id": "blog_posts",
+      "source_url": "https://openrouter.ai/blog/feed.xml",
+      "collected_at": "2026-11-10T08:28:59.940Z",
+      "status": "ok",
+      "record_count": 166,
+      "coverage": "Official blog RSS feed window, not a reconstruction of every historical blog version.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/blog_posts.xml",
+      "sha256": "3313fb9b9ae0d345cb7db0e11c35d6a4bd5ca736bc0fe1528c7d327ef9298fc7",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/blog/feed.xml",
+          "collected_at": "2026-11-10T08:28:59.940Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/blog_posts.xml",
+          "sha256": "3313fb9b9ae0d345cb7db0e11c35d6a4bd5ca736bc0fe1528c7d327ef9298fc7"
+        }
+      ]
+    },
+    {
+      "id": "status_incidents",
+      "source_url": "https://status.openrouter.ai/history.rss",
+      "collected_at": "2026-11-10T08:29:00.214Z",
+      "status": "ok",
+      "record_count": 6,
+      "coverage": "Official incident RSS bounded window. Absence of an item does not prove absence of an incident.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/status_incidents.xml",
+      "sha256": "6b5262a55514995c18c3f643a95763ff2c9e8ef6f4476de359709d43bd662ae0",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://status.openrouter.ai/history.rss",
+          "collected_at": "2026-11-10T08:29:00.214Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/status_incidents.xml",
+          "sha256": "6b5262a55514995c18c3f643a95763ff2c9e8ef6f4476de359709d43bd662ae0"
+        }
+      ]
+    },
+    {
+      "id": "upstream_openapi",
+      "source_url": "https://openrouter.ai/openapi.json",
+      "collected_at": "2026-11-10T08:29:01.653Z",
+      "status": "ok",
+      "record_count": 1,
+      "coverage": "Original official OpenAPI document, including authenticated operations that this collector does not execute. Upstream specification credential examples redacted for public publication.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/upstream_openapi.json",
+      "sha256": "81b0ad14b78ea17a820181c711b49699e180038eef83bfba11874a2a7b0ad780",
+      "http_status": 200,
+      "original_sha256": "71a832c2ed8d30ca3791e5677bb9f07156053454a7c07b122405c110ba8e6f16",
+      "redactions": {
+        "rule": "sk-or-v1-[A-Za-z0-9_-]+",
+        "reason": "Credential-shaped upstream examples are removed before public publication.",
+        "replacement": "REDACTED_OPENROUTER_CREDENTIAL_EXAMPLE",
+        "count": 18
+      },
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/openapi.json",
+          "collected_at": "2026-11-10T08:29:01.653Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/upstream_openapi.json",
+          "sha256": "81b0ad14b78ea17a820181c711b49699e180038eef83bfba11874a2a7b0ad780",
+          "original_sha256": "71a832c2ed8d30ca3791e5677bb9f07156053454a7c07b122405c110ba8e6f16",
+          "redactions": {
+            "rule": "sk-or-v1-[A-Za-z0-9_-]+",
+            "reason": "Credential-shaped upstream examples are removed before public publication.",
+            "replacement": "REDACTED_OPENROUTER_CREDENTIAL_EXAMPLE",
+            "count": 18
+          }
+        }
+      ]
+    },
+    {
+      "id": "docs_index",
+      "source_url": "https://openrouter.ai/docs/llms.txt",
+      "collected_at": "2026-11-10T08:29:00.359Z",
+      "status": "ok",
+      "record_count": 1,
+      "coverage": "Official documentation index; linked full documentation pages are not recursively downloaded.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/docs_index.txt",
+      "sha256": "a277e5260a995022a39bfbd57cd86f5a87374e6c7e4e32264e3a03fc48e54665",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/docs/llms.txt",
+          "collected_at": "2026-11-10T08:29:00.359Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/docs_index.txt",
+          "sha256": "a277e5260a995022a39bfbd57cd86f5a87374e6c7e4e32264e3a03fc48e54665"
+        }
+      ]
+    },
+    {
+      "id": "site_index",
+      "source_url": "https://openrouter.ai/llms.txt",
+      "collected_at": "2026-11-10T08:29:00.386Z",
+      "status": "ok",
+      "record_count": 1,
+      "coverage": "Official site language-model index; not every linked page or asset is archived.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/site_index.txt",
+      "sha256": "d4a245533d423da423373f36946dbd33b11555994c68b70f6b3b591df5bb8645",
+      "http_status": 200,
+      "pages": [
+        {
+          "source_url": "https://openrouter.ai/llms.txt",
+          "collected_at": "2026-11-10T08:29:00.386Z",
+          "http_status": 200,
+          "attempts": 1,
+          "raw_path": "raw/site_index.txt",
+          "sha256": "d4a245533d423da423373f36946dbd33b11555994c68b70f6b3b591df5bb8645"
+        }
+      ]
+    },
+    {
+      "id": "endpoints",
+      "source_url": "https://openrouter.ai/api/v1/models/{model_id}/endpoints",
+      "collected_at": "2026-11-10T08:29:13.008Z",
+      "status": "ok",
+      "record_count": 1774,
+      "coverage": "Enumerated every model in this run's all-modality catalogue. Endpoint statistics/prices are observed values, not guaranteed service levels. Empty endpoint arrays are retained in raw responses.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/endpoints.ndjson",
+      "sha256": "d975282432f2cf9cda093f9b87934a0cbfb77b25c8af7051f5de091f0bf73040",
+      "models_requested": 711,
+      "models_succeeded": 711,
+      "models_with_no_endpoints": 33,
+      "request_started_at": "2026-11-10T08:29:01.693Z"
+    },
+    {
+      "id": "image_endpoints",
+      "source_url": "https://openrouter.ai/api/v1/images/models/{model_id}/endpoints",
+      "collected_at": "2026-11-10T08:29:14.216Z",
+      "status": "ok",
+      "record_count": 67,
+      "coverage": "Enumerated every model in this run's dedicated image catalogue. Endpoint statistics/prices are observed values, not guaranteed service levels. Empty endpoint arrays are retained in raw responses.",
+      "unavailable": [],
+      "errors": [],
+      "raw_path": "raw/image_endpoints.ndjson",
+      "sha256": "3a2c1532d0e8f44a38757a69810eabfbb9c62a47d5dc2e6ac69a3c1a654d821c",
+      "models_requested": 63,
+      "models_succeeded": 63,
+      "models_with_no_endpoints": 1,
+      "request_started_at": "2026-11-10T08:29:13.008Z"
+    },
+    {
+      "id": "authenticated_data",
+      "source_url": "https://openrouter.ai/api/v1/datasets/",
+      "documentation_url": "https://openrouter.ai/docs/cookbook/administration/data-api",
+      "collected_at": "2026-11-10T08:29:14.216Z",
+      "status": "unavailable",
+      "record_count": 0,
+      "coverage": "Not collected: authenticated analytics/Data API (rankings, app rankings, benchmarks, session costs), account credits, keys, generations, private/provider-preference data, and usage records.",
+      "unavailable": [
+        "Requires authorized OpenRouter credentials and appropriate data usage rights. No credentials are requested or stored; no ranking or usage values are synthesized.",
+        "The public catalogues do not expose a complete historical record of retired models, endpoint outages, requests, revenue or private/ZDR traffic.",
+        "status.openrouter.ai/api/v2/summary.json returned HTTP 403 during source audit; only the public incident RSS window is collected."
+      ],
+      "errors": []
+    }
+  ]
+}
