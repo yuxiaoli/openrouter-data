@@ -118,16 +118,21 @@ npm run smoke -- https://openrouter-data.pages.dev
 
 本轮已观察到包含 44 项测试的阶段性本地检查通过；随后纯公开来源 parser 已通过其红绿回归与匿名真实结构核查。此处记录阶段性证据，不把它替代最终 check/build、真实归档完整性或线上验收。
 
-文档定稿时，API 1.1 的单次真实采集已启动，尚未取得完整结束和发布结果。以下证据由最终实际执行结果追加，不预填成功、记录数或部署版本：
+本轮现已完成真实采集、压缩归档发布及线上验收。[机器可读完整回执](sync-receipt-2026-11-10.json) 给出逐类条数、请求/响应数、窗口、单位、空样本、404、原始哈希变化和公开边界。
 
-| 验收项 | 当前记录要求 |
+| 验收项 | 实际结果 |
 | --- | --- |
-| 最终本地验证 | check 的测试数与结果、OpenAPI 路径/28 类校验、build 结果 |
-| 真实采集 | snapshot ID、UTC 起止、success/partial/failed、28 类各来源条数及错误/空/404/覆盖数 |
-| 新鲜度与恢复 | latest_snapshot、last_success、逐数据集成功引用；如有 fallback，记录真实旧快照/时间与显式 stale 验证 |
-| 归档 | 固定 data 提交、chunks/raw/request 字节校验结果；脱敏规则、原/归档 SHA 与实际次数 |
-| 线上部署 | 对应代码提交、Cloudflare 部署版本及生产地址 |
-| 线上功能 | catalog/feeds/overview、JSON/RSS/OpenAPI、统计窗口/metric/模态/模型查询、分页、历史、错误参数、HEAD/OPTIONS/POST |
-| 每日任务 | 仍 enabled 且 cron 09:23；后续运行结果与自然触发事件据实记录，不把手动运行冒称定时 |
+| 最终本地验证 | 49 项测试、TypeScript、12 paths / 28 datasets OpenAPI 校验、build 均通过；[源码 CI](https://github.com/yuxiaoli/openrouter-data/actions/runs/42793633979) success |
+| 真实采集 | `2026-11-10T093020Z-eb9b8257a8`，09:30:20.500–09:36:43.114 UTC（北京 17:30:20–17:36:43）；28 类 ok，errors 0，stale 0；13049 逻辑请求、8374 真实 fetch、4675 同 run 复用、0 重试 |
+| 新鲜度与恢复 | latest_snapshot 与 last_success 同为上述成功 run；逐数据集成功映射 28 项；失败/stale 回退与时间区分已回归测试，首次 partial 原件与错误保留 |
+| 归档 | [data e0b6f46](https://github.com/yuxiaoli/openrouter-data/commit/e0b6f46bfae683cce14269bfcde632552aeffd8a)；从实际暂存区导出的仅 gzip 发布格式验证 8 快照 / 30848 校验通过；旧 198 个文件树哈希不变 |
+| 存储 | 本 run 133 payload 文件无损 gzip：537491873 逻辑 bytes → 48773335 压缩 bytes；加 plain metadata 共 54288075 bytes；原件本机保留，storage.json 双哈希、压缩损坏发布门和旧 plain 格式兼容均验证 |
+| 线上部署 | [代码 9fdc791](https://github.com/yuxiaoli/openrouter-data/commit/9fdc791eb7dc5714a5c029a36a70efa389ad0ab3)，[Pages 180f01e7](https://180f01e7.openrouter-data.pages.dev)，生产 <https://openrouter-data.pages.dev> |
+| 线上功能 | 80 项真实 HTTP GET 验收通过，另有独立 32 次定向只读复查通过：28 类 data、catalog / feeds / overview、分类 RSS、OpenAPI、窗口 / metric / 模型 / app 查询、分页、旧历史、严格错误参数与 private type 拒绝；与本地暂存发布格式 80 项检查分开报告 |
+| 每日任务 | 当前 state active，唯一原 cron `23 1 * * *` / 北京 09:23 不变；既有自然运行 42782949976 success；本轮未 dispatch 或创建新定时。任务超时调整为 90 分钟适应完整公开数据，新增最新 gzip 发布门；来源 partial 仍归档并让 job 明确失败 |
 
 公开榜中的退役模型仅按原生 canonical/variant 身份补发现并尝试其当前可读窗口；合法空和 404 明确记录，不补造零用量或早期 snapshot。图片数、request、token、文档、视频秒/小时、字符、份额与百分点不可相加；没有声明的窗口、时区、performance/价格单位保留 unknown/unspecified。
+
+第一次新增采集 `2026-11-10T090637Z-35d01ff9e5` 明确为 partial：25 类 ok、三类逐模型统计出现 72 条请求生成错误（24 个目录真实 `~author/model` 别名被本地白名单遗漏），无其他网络/结构错误。这不是上游需要认证。修复仅允许原生作者前单个 `~`，仍保持 host / 路径 / 参数和私有接口白名单限制；保留该运行后重新完整匿名采集，得到上述 success。两次记录均在 data 分支，不覆盖失败记录，不复用旧时间冒作新观察。
+
+此次实际 404 共 16 条，均为特定模型的公开可用性接口，按不可得保留原响应。1297 个 activity 和 1297 个 model-apps 行是保留完整 payload 的请求上下文，不是 1297 个独立模型；覆盖 711 个当前目录模型，并从公开榜补足至 792 个 canonical/variant 上下文（额外 81 个）。旧目录与新增统计有重叠，不把它们相加当全平台流量。

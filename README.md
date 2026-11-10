@@ -1,5 +1,7 @@
 # OpenRouter Data Archive
 
+当前 API **1.1.0** 已完成真实采集及线上验收：[本轮回执](docs/sync-receipt-2026-11-10.json)。成功快照 `2026-11-10T093020Z-eb9b8257a8` 覆盖 28 类公开数据；[数据目录](https://openrouter-data.pages.dev/api/v1/catalog)、[分类订阅](https://openrouter-data.pages.dev/feeds.json) 和 [综合 RSS](https://openrouter-data.pages.dev/rss.xml?type=overview) 为发现入口。
+
 独立的 OpenRouter 公共数据每日快照、JSON 查询 API 和 RSS 服务。仓库：<https://github.com/yuxiaoli/openrouter-data>；Cloudflare 服务：<https://openrouter-data.pages.dev>。本项目不由 OpenRouter 运营，官方地址仅作为上游来源归属，不冒称本项目服务。
 
 API 1.1 保留 `/api/v1/` 路径和 `schema_version: 1`，在原有 16 类数据上增加 12 类公开统计；旧快照继续可读。实际线上覆盖、失败与数据时间以 [manifest](https://openrouter-data.pages.dev/api/v1/manifest) 为准，发布验收记录见 [operations](docs/operations.md)。
@@ -138,6 +140,8 @@ gh workflow run sync.yml --repo yuxiaoli/openrouter-data --ref main
 本机采集不会自行推送。审查 `data/index.json` 与新 manifest 后，在 `data` 子目录提交并推送。不要把 `data/` 加入 `main`，不要编辑旧运行目录；修正采集器后创建新运行。修改代码必须通过 `npm run check`、`npm run build`，API 变化同步更新 OpenAPI；上线后执行 `npm run smoke`。CI 在 main push 与 PR 时执行这些本地检查，持有只读仓库权限。
 
 ## Cloudflare 部署
+
+新增快照的 dataset / chunk / raw 文件采用无损 `.gz` 存储，逻辑路径与解压字节哈希保持不变。每次运行的 `storage.json` 记录逻辑和压缩文件的哈希及字节数；manifest / query-manifest / index 仍为 JSON，旧快照保留原格式。API 自动读取两种表示。新快照约 537.5 MB 逻辑 payload 压缩为 48.8 MB，连同元数据约 54.3 MB；使用 `npm run verify:archive -- data --require-packed-latest` 校验实际发布文件。每日任务只验证最新快照及必要引用，避免反复重算全部历史。
 
 服务采用 Cloudflare Pages advanced mode，`npm run build` 产出 `dist/_worker.js`。使用已有 Cloudflare Pages 授权部署，不需要 Workers / KV 权限，也不将本机凭据复制到仓库或 Actions：
 

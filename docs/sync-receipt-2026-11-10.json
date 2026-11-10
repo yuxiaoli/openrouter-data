@@ -1169,9 +1169,23 @@
     }
   ],
   "publication": {
-    "data_commit": null,
-    "code_commit": null,
-    "published_at": null,
-    "online_verification": null
+    "data_commit": "e0b6f46bfae683cce14269bfcde632552aeffd8a",
+    "code_commit": "9fdc791eb7dc5714a5c029a36a70efa389ad0ab3",
+    "pages_deployment": "https://180f01e7.openrouter-data.pages.dev",
+    "production_url": "https://openrouter-data.pages.dev",
+    "confirmed_public_at": "2026-11-10T09:54:44Z",
+    "confirmation_time_semantics": "Read-only confirmation after publication; not the exact GitHub push or Cloudflare deployment timestamp.",
+    "online_verification": {
+      "mode": "live HTTP GET",
+      "status": "passed",
+      "checks": 80,
+      "independent_targeted_read_only_checks": 32,
+      "snapshot": "2026-11-10T093020Z-eb9b8257a8",
+      "datasets_fresh": 28,
+      "api_version": "1.1.0",
+      "openapi_version": "3.1.0",
+      "paths": 12,
+      "coverage": ["all enabled dataset JSON", "catalog and feeds", "overview and classified RSS", "source windows and metrics", "model and application filtering", "pagination", "historical snapshots", "strict invalid query responses", "private dataset name rejection"]
+    }
   }
 }

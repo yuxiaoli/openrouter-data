@@ -87,6 +87,7 @@ export async function verifyPackedArchive(output:string,snapshot:string):Promise
     if(report.raw_path)expected.add(report.raw_path);
     for(const page of Array.isArray(report.pages)?report.pages:[])if(typeof page.raw_path==='string')expected.add(page.raw_path);
     for(const path of report.chunks??[])expected.add(path);
+    for(const path of Object.values(report.shards??{}))expected.add(path);
     for(const paths of Object.values(report.model_chunks??{}))for(const path of paths)expected.add(path);
   }
   for(const path of await walk(root))if(!metadata.has(path))expected.add(path.endsWith('.gz')?path.slice(0,-3):path);
