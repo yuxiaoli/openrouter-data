@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Published chart version",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "archive_revision", "snapshot", "latest_attempt", "source_commit", "collected_at", "generated_at", "chart_count", "public_dataset_count"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "archive_revision": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "snapshot": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{6}Z-[a-z0-9]+$"},
+    "latest_attempt": {"type": "object", "required": ["id", "status", "completed_at"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "status": {"enum": ["success", "partial", "failed"]}, "completed_at": {"type": "string", "format": "date-time"}}},
+    "source_commit": {"type": "string", "pattern": "^([a-f0-9]{40}|local)$"},
+    "collected_at": {"type": "string", "format": "date-time"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "chart_count": {"const": 14},
+    "public_dataset_count": {"const": 28}
+  }
+}

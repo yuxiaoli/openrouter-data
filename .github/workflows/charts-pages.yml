@@ -1,0 +1,82 @@
+name: Publish dynamic snapshot charts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'charts/**'
+      - 'scripts/archive.py'
+      - 'scripts/fetch_snapshot.py'
+      - '.github/workflows/charts-pages.yml'
+  pull_request:
+    branches: [main]
+  workflow_run:
+    workflows: ['Daily OpenRouter snapshot']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openrouter-dynamic-charts-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: charts/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install locked chart dependencies
+        run: npm ci --prefix charts --no-fund --no-audit
+      - name: Validate browser chart code
+        run: npm test --prefix charts
+      - name: Resolve existing complete archive snapshot
+        run: python scripts/fetch_snapshot.py probe
+      - name: Read and verify existing snapshot bytes (no collection)
+        run: python scripts/fetch_snapshot.py fetch
+      - name: Compile snapshot and build static browser charts
+        run: |
+          GITHUB_SHA="$(git rev-parse HEAD)" node charts/scripts/compile-current.mjs .cache/archive .cache/current-snapshot.json
+          npm run build --prefix charts
+          node charts/scripts/publish-snapshot.mjs .cache/current-snapshot.json charts/site-dist
+          node charts/scripts/verify-site.mjs charts/site-dist
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        with:
+          path: charts/site-dist
+      - name: Record snapshot and scope
+        run: |
+          node --input-type=module <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+          import fs from 'node:fs';
+          const s=JSON.parse(fs.readFileSync('charts/site-dist/snapshot.json','utf8'));
+          console.log(`Dynamic HTML charts: ${s.charts.length}\n\nSnapshot: ${s.snapshot}\n\nCollected: ${s.collectedAt}\n\nArchive revision: ${s.archiveRevision}\n\nSource: ${s.sourceCommit}\n\nReuses the existing daily collector. No new timer, upstream collection, PNG rendering, Cloudflare deployment or KV write.`);
+          NODE
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy complete static chart artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

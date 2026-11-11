@@ -1,0 +1,22 @@
+{
+  "name": "openrouter-dynamic-charts",
+  "version": "1.0.0",
+  "description": "Fourteen browser-rendered charts from one verified public snapshot",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:reference": "node scripts/verify-reference.mjs",
+    "qa:render": "node scripts/render-qa.mjs"
+  },
+  "license": "UNLICENSED",
+  "type": "module",
+  "dependencies": {
+    "echarts": "6.0.0"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "2.6.2",
+    "esbuild": "0.25.12",
+    "linkedom": "0.18.12"
+  },
+  "private": true
+}

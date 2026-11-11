@@ -1,0 +1,13 @@
+[project]
+name = "openrouter-data-chart-cli"
+version = "1.0.0"
+description = "Preserved fourteen-chart Python CLI alongside the OpenRouter data service"
+requires-python = ">=3.11"
+dependencies = ["matplotlib==3.10.8", "numpy==2.3.5"]
+
+[dependency-groups]
+dev = ["jsonschema==4.26.0"]
+
+[tool.ruff]
+target-version = "py311"
+

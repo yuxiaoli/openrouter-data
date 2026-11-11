@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "archive_revision": "0000000000000000000000000000000000000000",
+  "snapshot": "2026-11-10T093020Z-example",
+  "latest_attempt": {"id": "2026-11-10T093020Z-example", "status": "success", "completed_at": "2026-11-10T09:36:43Z"},
+  "source_commit": "local",
+  "collected_at": "2026-11-10T09:36:43Z",
+  "generated_at": "2026-11-10T10:00:00Z",
+  "chart_count": 14,
+  "public_dataset_count": 28
+}
