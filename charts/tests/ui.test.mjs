@@ -1,0 +1,30 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {parseHTML} from 'linkedom';
+import {sourceFixture} from './fixtures.mjs';
+const settle=()=>new Promise(resolve=>setTimeout(resolve,40));
+test('DOM simulation: loading, network error, retry, full14 SVGs, empty filters, repeated dialog and stale/failed-attempt states',async()=>{
+ const {window,document}=parseHTML(fs.readFileSync(new URL('../web/index.html',import.meta.url),'utf8'));
+ Object.assign(globalThis,{window,document,ResizeObserver:class{observe(){}disconnect(){}},requestAnimationFrame:fn=>setTimeout(fn,0),cancelAnimationFrame:clearTimeout});
+ Object.defineProperty(globalThis,'navigator',{value:{userAgent:'node DOM test',language:'zh-CN'},configurable:true});
+ const inner=Object.getOwnPropertyDescriptor(window.Element.prototype,'innerHTML');Object.defineProperty(window.Element.prototype,'innerHTML',{...inner,set(value){inner.set.call(this,value??'');}});
+ window.getComputedStyle=()=>({getPropertyValue:()=>'',width:'1000px',height:'1000px'});
+ const originalCreate=document.createElement.bind(document);document.createElement=(tag,...args)=>{const el=originalCreate(tag,...args);if(tag==='canvas')el.getContext=()=>({measureText:text=>({width:String(text).length*7})});return el;};
+ document.fonts={load:async()=>[],check:()=>true};
+ const dialog=document.getElementById('viewer');dialog.open=false;dialog.showModal=()=>{dialog.open=true;};dialog.close=()=>{dialog.open=false;dialog.dispatchEvent(new window.Event('close'));};
+ const $=id=>document.getElementById(id),click=el=>el.dispatchEvent(new window.Event('click'));
+ let calls=0,pending;globalThis.fetch=async(url)=>{calls++;assert.equal(url,'./snapshot.json');return await new Promise(resolve=>{pending=resolve;});};
+ const interval=globalThis.setInterval;globalThis.setInterval=(...args)=>{const t=interval(...args);t.unref();return t;};
+ const {compileGallery}=await import('../src/compile-all.mjs');const payload=compileGallery(sourceFixture());payload.coverage.authenticated_data=0;payload.provenance={manifestSha256:'a'.repeat(64)};
+ await import('../src/app.mjs');assert.equal(calls,1);assert.equal($('loading').hidden,false);click($('refresh'));assert.equal(calls,1,'repeated loading click is deduplicated');
+ pending({ok:false,status:503});await settle();assert.equal($('error-panel').hidden,false);assert.match($('error-copy').textContent,/尚无/);
+ click($('retry'));assert.equal(calls,2);pending({ok:true,json:async()=>payload});await settle();
+ assert.equal($('error-panel').hidden,true);assert.equal($('gallery').hidden,false);assert.equal(document.querySelectorAll('.chart-card').length,14);assert.equal(document.querySelectorAll('.chart-stage svg').length,14);assert.equal($('coverage-body').children.length,28);assert.match($('provenance').textContent,/a{64}/);
+ $('search').value='not-a-chart';$('search').dispatchEvent(new window.Event('input'));assert.equal($('empty').hidden,false);assert.equal($('result-count').textContent,'0 / 14 张图表');click($('clear-filters'));assert.equal($('empty').hidden,true);
+ click(document.querySelector('[data-filter="目录与价格"]'));assert.equal($('result-count').textContent,'2 / 14 张图表');click(document.querySelector('[data-filter="全部"]'));
+ click(document.querySelector('.card-actions button'));assert.equal(dialog.open,true);assert.equal($('viewer-chart').querySelectorAll('svg').length,1);$('natural-size').checked=true;$('natural-size').dispatchEvent(new window.Event('change'));assert.equal($('viewer-chart').querySelector('.chart-viewport').style.width,'1360px');click($('viewer-close'));assert.equal(dialog.open,false);assert.equal($('viewer-chart').childNodes.length,0);
+ click(document.querySelector('.card-actions button'));assert.equal(dialog.open,true);assert.equal($('natural-size').checked,false);dialog.close();
+ // A refresh may complete while an old snapshot modal is open. It must close before replacement.
+ click($('refresh'));click(document.querySelector('.card-actions button'));assert.equal(dialog.open,true);pending({ok:true,json:async()=>payload});await settle();assert.equal(dialog.open,false);assert.equal($('viewer-chart').childNodes.length,0);
+ const bad=structuredClone(payload);bad.charts.pop();click($('refresh'));pending({ok:true,json:async()=>bad});await settle();assert.equal($('error-panel').hidden,false);assert.equal(document.querySelectorAll('.chart-card').length,14,'invalid update keeps previously loaded complete UI');
+ const next=structuredClone(payload);next.latestAttempt.status='partial';next.collectedAt=new Date(Date.now()-48*3600000).toISOString();click($('retry'));pending({ok:true,json:async()=>next});await settle();assert.equal($('attempt-warning').hidden,false);assert.equal($('freshness').dataset.stale,'true');assert.equal(document.querySelectorAll('.chart-stage svg').length,14);
+ globalThis.setInterval=interval;
+});

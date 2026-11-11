@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/yuxiaoli/repo-cli/data/repos.schema.json",
+  "title": "RepoRegistry",
+  "description": "Schema for the .repos.json file maintained by `repo-cli`. Records cloned or registered Git repositories under the current working directory.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["repos"],
+  "properties": {
+    "repos": {
+      "type": "array",
+      "description": "List of registered repositories.",
+      "items": { "$ref": "#/$defs/RepoRecord" }
+    }
+  },
+  "$defs": {
+    "RepoRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "gitUrl", "path", "timestamp"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Repository name, derived from the clone URL or local directory name.",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "description": "Git remote URL (origin). May be empty for repos discovered by `repo scan` that have no configured remote."
+        },
+        "gitUrl": {
+          "type": "string",
+          "description": "The Git URL for the repository."
+        },
+        "readmeUrl": {
+          "type": "string",
+          "description": "Optional URL pointing to the repository's README.md file."
+        },
+        "path": {
+          "type": "string",
+          "description": "Filesystem path to the local checkout (e.g. \"C:\\\\workspace\\\\python\\\\repo-cli\", \"/home/user/repo-cli\", or \"$HOME/repo-cli\"). May contain environment variables. May be empty if not yet cloned locally."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO-8601 UTC timestamp of when the record was first created (e.g. \"2026-05-18T11:35:29Z\").",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "githubMetadata": {
+          "type": "object",
+          "description": "Cached metadata fetched from the GitHub API (`gh api repos/{repo.full_name}`).",
+          "additionalProperties": false,
+          "required": ["data", "fetchedAt"],
+          "properties": {
+            "data": {
+              "type": "object",
+              "description": "The raw JSON response data from the GitHub API."
+            },
+            "fetchedAt": {
+              "type": "string",
+              "description": "ISO-8601 UTC timestamp of when the metadata was last fetched.",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+            }
+          }
+        }
+      }
+    }
+  }
+}

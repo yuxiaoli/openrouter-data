@@ -1,0 +1,12 @@
+{
+  "repos": [
+    {
+      "name": "openrouter-data",
+      "gitUrl": "https://github.com/yuxiaoli/openrouter-data.git",
+      "path": "",
+      "timestamp": "2026-11-10T13:55:42Z",
+      "url": "https://github.com/yuxiaoli/openrouter-data",
+      "readmeUrl": "https://github.com/yuxiaoli/openrouter-data/blob/main/README.md"
+    }
+  ]
+}

@@ -7,3 +7,11 @@ coverage/
 *.log
 tmp/
 dist/
+
+# Python chart exports and local environments
+.venv/
+.cache/
+__pycache__/
+*.pyc
+.chart-cli-*/
+.charts-build-*/

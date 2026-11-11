@@ -8,6 +8,23 @@ API 1.1 保留 `/api/v1/` 路径和 `schema_version: 1`，在原有 16 类数据
 
 先看 [数据目录 catalog](https://openrouter-data.pages.dev/api/v1/catalog)、[全部订阅 feeds.json](https://openrouter-data.pages.dev/feeds.json) 和 [总览 RSS](https://openrouter-data.pages.dev/rss.xml?type=overview)：每个数据集都有分类、关键字段、真实状态、覆盖范围及完整 JSON / RSS 链接。
 
+## 动态图表与 Python CLI
+
+新的十四张动态图表由 `charts/` 中的 HTML/JavaScript 在浏览器直接绘制，保留白底蓝金配色、原始统计口径和每张图的来源。GitHub Pages 构建只读取 `data` 分支已有的同一份完整成功快照，校验归档文件 SHA-256 后生成约 114 KB 的数值快照，不再在线生成 PNG，也不增加 OpenRouter 采集或新的定时器。
+
+`Publish dynamic snapshot charts` 工作流在现有 `Daily OpenRouter snapshot` 完成后更新页面，也支持源代码变更与手动发布。原采集频率 `23 1 * * *`（每日 09:23 香港时间）不变。失败或部分采集不会混入图表；页面显示实际采集时间、最近尝试和过期提示，不能视作实时流。上线链接和验收以部署回执为准。
+
+保留的 Python 绘图脚本已迁入本仓库 `scripts/`。它们仍可从 CLI 独立生成原来的十四张 PNG，与动态图表部署分开：
+
+```sh
+uv sync --frozen
+uv run python scripts/fetch_snapshot.py probe
+uv run python scripts/fetch_snapshot.py fetch
+uv run python scripts/generate_charts.py --output .cache/chart-exports/run-01
+```
+
+输出目录必须是新目录，原有输出不会被覆盖。完整命令见 [`scripts/commands.sh`](scripts/commands.sh)，字体与离线归档用法见 [Python CLI 说明](docs/chart-cli.md)，动态网页构建见 [charts/README.md](charts/README.md)。旧图集、历史数据与原 API 在新页验收前保持不动。
+
 ## 数据与来源
 
 28 个数据集按用途分类；数据有重叠，条数不可相加当作独立模型或全平台用量：

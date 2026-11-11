@@ -1,0 +1,50 @@
+{
+  "source_repository": "https://github.com/yuxiaoli/openrouter-charts",
+  "source_commit": "928a2e7a0c02e2aaaac9723b8549fbfacfbafd56",
+  "preserved_files": [
+    {
+      "path": "scripts/archive.py",
+      "sha256": "eeeb9e7a347dd8e9245cd31614ed57f0be1b6439c364bddeaabc812814abc164",
+      "git_blob": "362031db5aeef0e9117eff2f1b33546c0a71107d",
+      "preserved_original_path": "scripts/archive.py"
+    },
+    {
+      "path": "scripts/build_site.py",
+      "sha256": "5a18ae1d6ee1d63dff1c71eb4a4b0e78dbf9bb8d28058826e6d73750d7ce8731",
+      "git_blob": "75bb57175674d108d85714d4401ffb297aaed3e2",
+      "preserved_original_path": "scripts/legacy_chart_gallery/originals/build_site.py",
+      "adapted_sha256": "1f4513dee2bf72337e195fe82183bb5885779e8b01cbe082726511819b59c539",
+      "adaptation": "Relocate legacy gallery assets; build_site default output is .cache/legacy-gallery to avoid API dist collision"
+    },
+    {
+      "path": "scripts/check_contracts.py",
+      "sha256": "f9501e7be56abf6ff8b94f4b19fb8954f537bc208805d9810fdb22628b2fc552",
+      "git_blob": "fbaea055cffbbf8369272c5e81a0ac4661d58420",
+      "preserved_original_path": "scripts/legacy_chart_gallery/originals/check_contracts.py",
+      "adapted_sha256": "4325952ea91430e4037f942f816b923547d7246af0aaf2ec1d26e2f825fee9ef",
+      "adaptation": "Relocate legacy gallery assets; build_site default output is .cache/legacy-gallery to avoid API dist collision"
+    },
+    {
+      "path": "scripts/fetch_snapshot.py",
+      "sha256": "d3690aacb53c05ea02440a59b8762f5280f1f473e78be4b474743974649026ba",
+      "git_blob": "3b1ae768dca37822a854c4d89a3a6dae625486f1",
+      "preserved_original_path": "scripts/fetch_snapshot.py"
+    },
+    {
+      "path": "scripts/render_charts.py",
+      "sha256": "d025e6fa4f419ebb425c3f6be45fe830bb94df7c3ac4b8a5535194d64b43f112",
+      "git_blob": "9f569d0be797d5e637d1f1ce481cfab28b959cde",
+      "preserved_original_path": "scripts/render_charts.py"
+    },
+    {
+      "path": "scripts/snapshot.py",
+      "sha256": "5cf2a5e0d3c486af93476b93aa8d3d726a8a458e4191120b17a899e4585c3c74",
+      "git_blob": "b14226cc606d2952438be4b03ced52af78c22cca",
+      "preserved_original_path": "scripts/snapshot.py"
+    }
+  ],
+  "archive_repository": "https://github.com/yuxiaoli/openrouter-data",
+  "migration_status": "Integrated source candidate; publication and reviewed merge verified separately",
+  "destination_repository": "https://github.com/yuxiaoli/openrouter-data",
+  "destination_base_commit": "9f1843f9f1bbc31b0c4bffb7442376e920ac6351"
+}
