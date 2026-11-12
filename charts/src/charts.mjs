@@ -28,7 +28,7 @@ function barOptions(c,o,w,h){
  c.panels.forEach((p,i)=>{const g=o.grid[i],max=Math.max(...p.rows.map(r=>r.value))*1.2;
   title(o,g,p.title);
   o.xAxis.push({...valueAxis,gridIndex:i,min:0,max,interval:maxNTick(max,4),axisLabel:{...axisLabel,formatter:compact},name:p.unit,nameLocation:'middle',nameGap:28,nameTextStyle:{fontFamily:FONT,fontSize:12*size,color:'#404852'}});
-  o.yAxis.push({type:'category',gridIndex:i,inverse:true,data:p.rows.map(r=>r.label),axisLabel:{...axisLabel,showMinLabel:true,showMaxLabel:true,fontSize:10*size,margin:8},axisLine:{show:false},axisTick:{show:false},splitLine:{show:false}});
+  o.yAxis.push({type:'category',gridIndex:i,inverse:true,data:p.rows.map(r=>r.dateLabel?`${r.label}\n${r.dateLabel}`:r.label),axisLabel:{...axisLabel,showMinLabel:true,showMaxLabel:true,fontSize:10*size,lineHeight:14*size,margin:8},axisLine:{show:false},axisTick:{show:false},splitLine:{show:false}});
   o.series.push({type:'bar',xAxisIndex:i,yAxisIndex:i,data:p.rows.map(r=>r.value),barWidth:'68%',itemStyle:{color:THEME.blue},label:{show:true,position:'right',distance:Math.max(...p.rows.map(r=>r.value))/max*g.width*.016,fontFamily:FONT,fontSize:10.5*size,color:THEME.text,formatter:({value})=>value.toFixed(p.decimals)},silent:true});
  });
 }

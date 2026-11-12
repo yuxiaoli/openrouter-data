@@ -37,20 +37,50 @@ function base(id,title,subtitle,dataset,manifest) {
     observedAt:report.observed_at||report.collected_at||manifest.completed_at, window:report.window||null,
     sourceUrls:[`https://openrouter-data.pages.dev/api/v1/data?type=${dataset}&snapshot=${manifest.id}`]};
 }
+/** Validate a native record-date string without normalizing or rewriting it. */
+function rankingDateStatus(value) {
+  if(value===null||value===undefined||(typeof value==='string'&&!value.trim()))return 'missing';
+  if(typeof value!=='string')return 'invalid';
+  const match=/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(Z|[+-]\d{2}:?\d{2})?)?$/.exec(value);
+  if(!match)return 'invalid';
+  const [,year,month,day,hour,minute,second,zone]=match;
+  const y=Number(year),m=Number(month),d=Number(day);
+  const leap=y%4===0&&(y%100!==0||y%400===0);
+  const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
+  if(m<1||m>12||d<1||d>days[m-1]||(hour!==undefined&&(Number(hour)>23||Number(minute)>59||Number(second)>59)))return 'invalid';
+  if(zone&&zone!=='Z'){
+    const offset=zone.slice(1).replace(':','');
+    if(Number(offset.slice(0,2))>23||Number(offset.slice(2))>59)return 'invalid';
+  }
+  return 'valid';
+}
+function summarizeRankingDates(rows) {
+  const recordDates=[...new Set(rows.filter(r=>r.dateStatus==='valid').map(r=>r.date))];
+  const missingDateCount=rows.filter(r=>r.dateStatus==='missing').length;
+  const invalidDateCount=rows.filter(r=>r.dateStatus==='invalid').length;
+  return {recordDates,missingDateCount,invalidDateCount,mixedRecordDates:recordDates.length>1,
+    recordDate:recordDates.length===1&&!missingDateCount&&!invalidDateCount?recordDates[0]:null};
+}
 export function compileRankings(rows,manifest) {
-  const chart=base('03','同一周窗口的模型排名','固定 view=week；四种指标分别排序，模型版本与变体不合并',DATASETS[0],manifest);
+  const chart=base('03','公开模型周榜','同一采集快照，固定 view=week；保留逐条记录 date，模型版本与变体不合并',DATASETS[0],manifest);
   const specs=[['tokens','Tokens 前 8','万亿 tokens',1e12,2],['tokens_excl_byok','排除 BYOK 的 tokens 前 8','万亿 tokens',1e12,2],['requests','请求数前 8','亿次请求',1e8,2],['spend','spend 指标原始值前 8','原始值：单位未声明',1,4]];
-  const dates=new Set();
   chart.panels=specs.map(([metric,title,unit,divisor,decimals])=>{
     const selected=rows.filter(r=>r._source?.view==='week'&&r._source?.metric===metric&&r.model_permaslug);
     if (selected.some(r=>!finite(r.rankingMetricValue))) throw new Error('Non-finite ranking value');
     const top=selected.sort((a,b)=>b.rankingMetricValue-a.rankingMetricValue).slice(0,8);
     if (!top.length) throw new Error(`Empty ranking metric ${metric}`);
-    return {metric,title,unit,divisor,decimals,rows:top.map(r=>{dates.add(r.date);return {label:r.variant_permaslug||r.model_permaslug||r.model||r.id||'',value:r.rankingMetricValue/divisor,rawValue:r.rankingMetricValue};})};
+    const rankedRows=top.map(r=>{
+      const date=r.date===undefined?null:r.date,dateStatus=rankingDateStatus(date);
+      const dateLabel=dateStatus==='valid'?`date = ${date}`:dateStatus==='missing'?'date 未提供':'date 无效（原值保留在数值详情）';
+      return {label:r.variant_permaslug||r.model_permaslug||r.model||r.id||'',value:r.rankingMetricValue/divisor,rawValue:r.rankingMetricValue,date,dateStatus,dateLabel};
+    });
+    return {metric,title,unit,divisor,decimals,rows:rankedRows,...summarizeRankingDates(rankedRows)};
   });
-  if(dates.size!==1) throw new Error('Weekly panels do not share one record date');
-  chart.recordDate=[...dates][0];
-  chart.notes=`入选记录 date = ${chart.recordDate}；week 的精确起止未声明，不与日榜/月榜或当前未完整周图混合。\nspend 仅展示原始排名指标，不能读成美元或直接乘 100 当作支出份额。BYOK 指自带密钥。`;
+  Object.assign(chart,summarizeRankingDates(chart.panels.flatMap(p=>p.rows)));
+  const dateSummary=chart.recordDate!==null?`均为 ${chart.recordDate}`:`含 ${chart.recordDates.length} 种有效值`;
+  const missing=chart.missingDateCount?`；缺失 ${chart.missingDateCount} 条`:'';
+  const invalid=chart.invalidDateCount?`；无效 ${chart.invalidDateCount} 条`:'';
+  chart.notes=`记录 date ${dateSummary}${missing}${invalid}；逐条见模型标签。week 精确起止未声明，不假定相同起止。\nspend 仅展示原始排名指标，不能读成美元或直接乘 100 当作支出份额。BYOK 指自带密钥。`;
   return chart;
 }
 export function compileModalities(rows,manifest) {
