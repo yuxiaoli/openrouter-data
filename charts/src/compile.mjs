@@ -62,7 +62,7 @@ function summarizeRankingDates(rows) {
     recordDate:recordDates.length===1&&!missingDateCount&&!invalidDateCount?recordDates[0]:null};
 }
 export function compileRankings(rows,manifest) {
-  const chart=base('03','公开模型周榜','同一采集快照，固定 view=week；保留逐条记录 date，模型版本与变体不合并',DATASETS[0],manifest);
+  const chart=base('03','公开模型周榜','周榜按四种指标分别排名；各条目注明原始日期，模型版本与变体分别列示',DATASETS[0],manifest);
   const specs=[['tokens','Tokens 前 8','万亿 tokens',1e12,2],['tokens_excl_byok','排除 BYOK 的 tokens 前 8','万亿 tokens',1e12,2],['requests','请求数前 8','亿次请求',1e8,2],['spend','spend 指标原始值前 8','原始值：单位未声明',1,4]];
   chart.panels=specs.map(([metric,title,unit,divisor,decimals])=>{
     const selected=rows.filter(r=>r._source?.view==='week'&&r._source?.metric===metric&&r.model_permaslug);
@@ -94,7 +94,7 @@ export function compileModalities(rows,manifest) {
     const last=points.at(-1), incomplete=last.time+7*DAY>timestamp(chart.observedAt);
     return {route,title:`${label}  ·  ${points.length} 个周桶`,unit:'请求数',bucketDays:7,points,incomplete};
   });
-  chart.notes='仅使用 metricData.request；图像请求不等于生成图像张数，不同模态的 generated 单位不可相加。\n各模态公开历史长度不同，未返回的更早日期未补零。空心末点仅标记采集时尚未结束的周，勿据此判断近期下滑。';
+  chart.notes='仅使用 metricData.request；图像请求不等于生成图像张数，不同模态的 generated 单位不可相加。\n各模态公开历史长度不同，更早的空白日期表示没有数据。空心末点仅标记采集时尚未结束的周，勿据此判断近期下滑。';
   return chart;
 }
 export function compileSessionCosts(rows,manifest) {
@@ -106,7 +106,7 @@ export function compileSessionCosts(rows,manifest) {
     const values=h.models.flatMap(m=>m.points.filter(p=>p.bucket===bucket&&positive(p.medianUsd)).map(p=>Number(p.medianUsd)));
     return {bucket,values,stats:boxStats(values)};
   })}));
-  chart.notes='每点是一个模型在该会话桶的 medianUsd；箱体描述这些模型中位数的分布，不是所有会话的合并成本分布。\n保留上游 single/short/core/long 名称，未猜测桶边界；样本量不同且没有会话权重，不能据此判断哪个工具更省钱。';
+  chart.notes='每点是一个模型在该会话桶的 medianUsd；箱体描述这些模型中位数的分布，不是所有会话的合并成本分布。\nsingle/short/core/long 为来源的会话分组，具体边界未声明。样本量不同且缺少会话权重，不能据此比较工具成本。';
   return chart;
 }
 export function compileSnapshot({manifest,datasets,archiveRevision,sourceCommit}) {

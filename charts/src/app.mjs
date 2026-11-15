@@ -20,8 +20,8 @@ function downloadSvg(chart){
  const [w,h]=dimensions(chart),instance=echarts.init(null,null,{renderer:'svg',ssr:true,width:w,height:h});
  try{instance.setOption(chartOptions(chart));const svg=instance.renderToSVGString();const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'})),a=element('a',{href:url,download:`openrouter-${chart.snapshot}-${chart.id}.svg`});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}finally{instance.dispose();}
 }
-function updateFreshness(){if(!state.snapshot)return;const s=state.snapshot,f=freshness(s);$('freshness').textContent=f.label;$('freshness').dataset.stale=String(f.stale);$('collected').textContent=utc(s.collectedAt);$('snapshot-id').textContent=s.snapshot;const latest=s.latestAttempt;$('attempt').textContent=latest?`${latest.status} · ${latest.id}`:'未提供';$('attempt-warning').hidden=!f.attemptWarning;$('attempt-warning').textContent=f.attemptWarning?'最近采集尝试未用于此图集。当前 14 张图仍来自上方同一份完整成功快照。':'';}
-function renderCoverage(s){const tbody=$('coverage-body');tbody.replaceChildren();for(const[name,n]of PUBLIC_DATASETS.map(name=>[name,s.coverage[name]])){const tr=element('tr');tr.append(element('td',{},name),element('td',{},n.toLocaleString('zh-CN')));tbody.append(tr);}const parts=[`数据快照：${s.snapshot}`,`采集完成：${utc(s.collectedAt)}`];if(s.sourceCommit)parts.push(`构建版本：${s.sourceCommit}`);if(s.provenance?.manifestSha256)parts.push(`清单 SHA-256：${s.provenance.manifestSha256}`);else if(s.provenance?.normalized_manifest_sha256)parts.push(`清单 SHA-256：${s.provenance.normalized_manifest_sha256}`);else if(s.provenance?.manifest_sha256)parts.push(`清单 SHA-256：${s.provenance.manifest_sha256}`);if(s.archiveRevision)parts.push(`归档版本：${s.archiveRevision}`);$('provenance').textContent=parts.join('\n');}
+function updateFreshness(){if(!state.snapshot)return;const s=state.snapshot,f=freshness(s);$('freshness').textContent=f.label;$('freshness').dataset.stale=String(f.stale);$('collected').textContent=utc(s.collectedAt);$('snapshot-id').textContent=s.snapshot;const latest=s.latestAttempt;$('attempt').textContent=latest?`${latest.status} · ${latest.id}`:'未提供';$('attempt-warning').hidden=!f.attemptWarning;$('attempt-warning').textContent=f.attemptWarning?'最新数据暂不可用，当前显示上方日期的数据。':'';}
+function renderCoverage(s){const tbody=$('coverage-body');tbody.replaceChildren();for(const[name,n]of PUBLIC_DATASETS.map(name=>[name,s.coverage[name]])){const tr=element('tr');tr.append(element('td',{},name),element('td',{},n.toLocaleString('zh-CN')));tbody.append(tr);}const parts=[`数据日期：${utc(s.collectedAt)}`,`快照编号：${s.snapshot}`];$('provenance').textContent=parts.join('\n');}
 function applyFilters(){const charts=state.snapshot?.charts||[],matched=new Set(filterCharts(charts,state.query,state.category).map(c=>c.id));for(const c of charts){$(`card-${c.id}`).hidden=!matched.has(c.id);$(`nav-${c.id}`).hidden=!matched.has(c.id);}document.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.filter===state.category)));$('result-count').textContent=`${matched.size} / 14 张图表`;$('empty').hidden=matched.size!==0;}
 let viewerMount=null;
 function openViewer(chart){state.currentChart=chart;state.lastFocus=document.activeElement;$('viewer-title').textContent=`${chart.id} ${chart.title}`;$('viewer-notes').textContent=chart.notes;$('natural-size').checked=false;viewerMount?.dispose();$('viewer').showModal();viewerMount=mountChart($('viewer-chart'),chart);}
@@ -54,9 +54,9 @@ async function load(){
   state.snapshot=snapshot;updateFreshness();renderCoverage(snapshot);renderGallery(snapshot);$('gallery').hidden=false;$('snapshot-panel').hidden=false;$('coverage').hidden=false;
   $('last-checked').textContent='本页检查：'+utc(new Date().toISOString());
  }catch(error){
-  const message=error.name==='TimeoutError'?'读取超时，请稍后重试。':error.httpStatus?error.message:'无法加载或验证完整图集，请稍后重试。';
+  const message=error.name==='TimeoutError'?'读取超时，请稍后重试。':error.httpStatus?error.message:'暂时无法加载图表，请稍后重试。';
   $('error-copy').textContent=message;$('error-panel').hidden=false;
-  if(state.snapshot)setNotice('更新未完成，当前页面仍显示已加载的完整快照。','warning');
+  if(state.snapshot)setNotice('更新暂不可用，当前图表仍显示上次加载的数据。','warning');
  }finally{if(request===state.loadNumber){state.loading=false;$('loading').hidden=true;$('retry').disabled=false;$('refresh').disabled=false;}}
 }
 $('search').addEventListener('input',e=>{state.query=e.target.value;applyFilters();});
