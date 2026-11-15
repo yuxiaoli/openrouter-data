@@ -91,3 +91,13 @@ node charts/scripts/publish-snapshot.mjs .cache/current-snapshot.json charts/sit
 ```
 
 Open `origins/` on a static preview server. Browser acceptance must cover date/group switches, price sample/unknown handling, repeated refresh, search, stale/error states, and actual 390px viewport overflow, in addition to the existing fourteen-chart gallery.
+
+### Mobile scales, shares and catalog-price scenario
+
+Numeric axes use fewer ticks at narrow chart widths, collision suppression and T/B/M abbreviations (10¹²/10⁹/10⁶). Resizing back to desktop restores the standard tick count. The share pie uses the selected native day’s complete known-token sample, including unknown origins and cross-border organizations. Missing amounts are excluded explicitly, not zero-filled; a zero/unknown denominator produces no artificial pie.
+
+The estimated-value panel is a **default catalog-price scenario**, not billed spending, revenue, profit or a regional market total. Per matched model it computes `prompt_tokens × prompt_USD_per_token + completion_tokens × completion_USD_per_token`. The join requires a native `standard` variant, exact nonempty native model/variant/canonical identity, a catalog output modality exactly `["text"]` (inputs may include other modalities), and an ordinary route without `:` suffix or `~` alias. Only one unique nonnegative input/output quote pair may remain. Raw route eligibility is retained before quote-pair deduplication, so free/batch/alias/mixed-audio routes cannot supply a standard quote accidentally.
+
+Unmatched, nonstandard, ambiguous, unavailable or incomplete observations remain excluded with visible coverage. A region with no matches has an unavailable amount, not zero. Reviewed geographic unknowns can still have an exact quote and remain included. Quotes are observed at catalog collection time and applied to the selected usage-day records; they are not historical tariffs. No extrapolation is made to the omitted volume. Conditional pricing, cache/BYOK discounts, other fees and provider differences are not reconstructed; matched rows carrying conditional tariffs are counted and disclosed.
+
+Primary definitions: [Models API price units/default fields](https://github.com/OpenRouterTeam/docs/blob/main/guides/overview/models.mdx), [model route variants](https://github.com/OpenRouterTeam/docs/blob/main/guides/routing/model-variants/overview.mdx).

@@ -61,7 +61,7 @@ function tokenFields(row,metric=false) {
   if(metric && tokens!==null && combined!==null && tokens!==combined)throw Error('Token metric disagrees with native components');
   return {promptTokens,completionTokens,tokens};
 }
-function comparable(row) {return JSON.stringify([row.model,row.date,row.promptTokens,row.completionTokens,row.tokens]);}
+function comparable(row) {return JSON.stringify([row.model,row.date,row.variantKind??null,row.promptTokens,row.completionTokens,row.tokens]);}
 function requireTokenUnits(source, fields) {
   if (!fields.every(k=>source?.units?.[k]==='tokens')) throw Error('Missing or contradictory native token units');
 }
@@ -71,7 +71,7 @@ export function compileUsage(rows,map) {
   for(const r of selected){
     requireTokenUnits(r._source,['rankingMetricValue','total_prompt_tokens','total_completion_tokens']);
     const model=text(r.model_permaslug),variant=text(r.variant_permaslug),date=nativeDate(r.date);
-    const row={model,variant,date,...identifyOrigin(model,map),...tokenFields(r,true)};
+    const row={model,variant,date,variantKind:text(r.variant),...identifyOrigin(model,map),...tokenFields(r,true)};
     // A missing native identity is not an alias key: retain every observed row.
     const key=variant&&date?JSON.stringify([variant,date]):null;
     if(key&&seen.has(key)){if(comparable(seen.get(key))!==comparable(row))throw Error('Conflicting daily ranking duplicate');duplicateRows++;continue;}
@@ -79,6 +79,11 @@ export function compileUsage(rows,map) {
   }
   return {dates:[...new Set(result.map(r=>r.date))].sort((a,b)=>a===null?1:b===null?-1:a.localeCompare(b)),rows:result,rawRows:selected.length,duplicateRows,missingIdentityRows:result.filter(r=>!r.model||!r.variant).length};
 }
+export function isBaseTextRoute(model) {
+  const id=text(model.id),outputs=model.architecture?.output_modalities;
+  return Boolean(id&&!id.includes(':')&&!id.startsWith('~')&&Array.isArray(outputs)&&outputs.length===1&&outputs[0]==='text');
+}
+const hasOverrides=r=>Array.isArray(r.pricing?.overrides)?r.pricing.overrides.length>0:Boolean(r.pricing?.overrides&&typeof r.pricing.overrides==='object'&&Object.keys(r.pricing.overrides).length);
 export function compilePrices(rows,map) {
   const selected=rows.filter(r=>r.architecture?.output_modalities?.includes('text'));
   const seen=new Map(),offers=[];let aliasRoutes=0;
@@ -88,11 +93,44 @@ export function compilePrices(rows,map) {
     const promptUsdPerMillion=price(r.pricing?.prompt),completionUsdPerMillion=price(r.pricing?.completion);
     // Only an explicit canonical identity can establish aliases. Missing identity stays unknown.
     const key=canonicalSlug?JSON.stringify([canonicalSlug,promptUsdPerMillion,completionUsdPerMillion]):null;
-    if(key&&seen.has(key)){const prev=seen.get(key);if(route&&!prev.routes.includes(route))prev.routes.push(route);aliasRoutes++;continue;}
-    const offer={canonicalSlug,name,...identifyOrigin(canonicalSlug,map),routes:route?[route]:[],promptUsdPerMillion,completionUsdPerMillion};
+    if(key&&seen.has(key)){const prev=seen.get(key);if(route&&!prev.routes.includes(route))prev.routes.push(route);if(isBaseTextRoute(r)&&!prev.standardTextRoutes.includes(route))prev.standardTextRoutes.push(route);if(isBaseTextRoute(r)&&hasOverrides(r)&&!prev.standardTextOverrideRoutes.includes(route))prev.standardTextOverrideRoutes.push(route);aliasRoutes++;continue;}
+    const offer={canonicalSlug,name,...identifyOrigin(canonicalSlug,map),routes:route?[route]:[],standardTextRoutes:isBaseTextRoute(r)?[route]:[],standardTextOverrideRoutes:isBaseTextRoute(r)&&hasOverrides(r)?[route]:[],promptUsdPerMillion,completionUsdPerMillion};
     if(key)seen.set(key,offer);offers.push(offer);
   }
   return {unit:'USD / million tokens',rawRoutes:selected.length,offers,aliasRoutes};
+}
+
+/** Counterfactual default-catalog quote value of the conservatively matched sample. */
+export function compileValuation(usage,pricing) {
+  const byCanonical=new Map();
+  for(const offer of pricing.offers){if(!offer.canonicalSlug||!offer.standardTextRoutes.length)continue;if(!byCanonical.has(offer.canonicalSlug))byCanonical.set(offer.canonicalSlug,[]);byCanonical.get(offer.canonicalSlug).push(offer);}
+  const rows=usage.rows.map(r=>{
+    const out={model:r.model,variant:r.variant,date:r.date,originId:r.originId,tokens:r.tokens,promptTokens:r.promptTokens,completionTokens:r.completionTokens,promptUsdPerMillion:null,completionUsdPerMillion:null,amountUsd:null,quoteRoutes:[],hasConditionalPricing:false,reason:null};
+    const quotes=byCanonical.get(r.variant)||[];
+    if(!r.model||!r.variant)out.reason='missing_identity';
+    else if(r.variantKind!=='standard')out.reason='nonstandard_or_unknown_variant';
+    else if(r.variant!==r.model)out.reason='variant_identity_mismatch';
+    else if(!quotes.length)out.reason='no_eligible_base_text_quote';
+    else if(quotes.length!==1)out.reason='ambiguous_quote';
+    else if(quotes[0].promptUsdPerMillion===null||quotes[0].completionUsdPerMillion===null)out.reason='missing_quote';
+    else if([r.tokens,r.promptTokens,r.completionTokens].some(v=>v===null))out.reason='missing_usage';
+    else {
+      out.quoteRoutes=[...quotes[0].standardTextRoutes];out.hasConditionalPricing=quotes[0].standardTextOverrideRoutes.length>0;out.promptUsdPerMillion=quotes[0].promptUsdPerMillion;out.completionUsdPerMillion=quotes[0].completionUsdPerMillion;
+      out.amountUsd=r.promptTokens/1e6*out.promptUsdPerMillion+r.completionTokens/1e6*out.completionUsdPerMillion;
+      if(!Number.isFinite(out.amountUsd))throw Error('Non-finite catalog quote estimate');
+      out.reason='matched';
+    }
+    return out;
+  });
+  return {method:'default-catalog-price-scenario-v1',currency:'USD',rows};
+}
+export function aggregateValuation(rows,map,mode='region') {
+  const groups=new Map();
+  for(const row of rows){const g=groupOrigin(row.originId,map,mode);if(!groups.has(g.id))groups.set(g.id,{...g,items:[]});groups.get(g.id).items.push(row);}
+  return [...groups.values()].map(g=>{
+    const matched=g.items.filter(r=>r.reason==='matched'),reportedTokens=sumKnown(g.items.map(r=>r.tokens)),matchedTokens=matched.length?sumKnown(matched.map(r=>r.tokens)):null;
+    return {id:g.id,label:g.label,amountUsd:sumKnown(matched.map(r=>r.amountUsd)),rows:g.items.length,matchedRows:matched.length,conditionalRows:matched.filter(r=>r.hasConditionalPricing).length,conditionalTokens:matched.filter(r=>r.hasConditionalPricing).reduce((n,r)=>n+r.tokens,0),excludedRows:g.items.length-matched.length,reportedTokens,matchedTokens,tokenCoverage:reportedTokens>0?(matchedTokens??0)/reportedTokens:null};
+  }).sort((a,b)=>(b.amountUsd??-1)-(a.amountUsd??-1)||a.id.localeCompare(b.id));
 }
 export function compileActivity(contexts,map,observedAt) {
   const keys=new Map();let aliasDuplicateRows=0,excludedMissingIdentityRows=0;
@@ -126,6 +164,7 @@ export function compileOrigins(bundle,map) {
     observedAt[key]=report.observed_at||report.collected_at||m.completed_at;
   }
   const result={schemaVersion:1,kind:'developer-origins',snapshot:m.id,collectedAt:m.completed_at,archiveRevision:bundle.archive_revision,sourceCommit:bundle.source_commit,latestAttempt:bundle.latest_attempt??null,provenance:bundle.provenance,observedAt,attribution:map,usage:compileUsage(d.public_model_rankings,map),pricing:compilePrices(d.models,map),activity:compileActivity(d.public_model_activity,map,observedAt.activity)};
+  result.valuation=compileValuation(result.usage,result.pricing);
   return validateOrigins(result);
 }
 export function validateOrigins(p) {
@@ -135,14 +174,17 @@ export function validateOrigins(p) {
   const count=x=>Number.isInteger(x)&&x>=0,number=x=>x===null||typeof x==='number'&&Number.isFinite(x)&&x>=0;
   const origin=r=>r.originId==='unknown'||Object.hasOwn(p.attribution.organizations,r.originId);
   if(!Array.isArray(p.usage?.rows)||!Array.isArray(p.usage.dates)||!count(p.usage.rawRows)||!count(p.usage.duplicateRows)||p.usage.rawRows!==p.usage.rows.length+p.usage.duplicateRows)throw Error('Invalid usage coverage');
-  for(const r of p.usage.rows)if(!origin(r)||nativeDate(r.date)!==r.date||!['tokens','promptTokens','completionTokens'].every(k=>number(r[k]))||![r.model,r.variant,r.namespace].every(v=>v===null||typeof v==='string'))throw Error('Invalid usage row');
+  for(const r of p.usage.rows)if(!origin(r)||nativeDate(r.date)!==r.date||!['tokens','promptTokens','completionTokens'].every(k=>number(r[k]))||![r.model,r.variant,r.namespace,r.variantKind].every(v=>v===null||typeof v==='string'))throw Error('Invalid usage row');
   const dates=[...new Set(p.usage.rows.map(r=>r.date))].sort((a,b)=>a===null?1:b===null?-1:a.localeCompare(b));
   if(JSON.stringify(dates)!==JSON.stringify(p.usage.dates)||p.usage.missingIdentityRows!==p.usage.rows.filter(r=>!r.model||!r.variant).length)throw Error('Invalid usage dates/identities');
   if(!Array.isArray(p.pricing?.offers)||!count(p.pricing.rawRoutes)||!count(p.pricing.aliasRoutes)||p.pricing.rawRoutes!==p.pricing.offers.length+p.pricing.aliasRoutes||p.pricing.unit!=='USD / million tokens')throw Error('Invalid price coverage');
-  for(const r of p.pricing.offers)if(!origin(r)||!number(r.promptUsdPerMillion)||!number(r.completionUsdPerMillion)||!Array.isArray(r.routes)||!r.routes.every(v=>typeof v==='string')||!text(r.name))throw Error('Invalid price offer');
+  for(const r of p.pricing.offers)if(!origin(r)||!number(r.promptUsdPerMillion)||!number(r.completionUsdPerMillion)||!Array.isArray(r.routes)||!r.routes.every(v=>typeof v==='string')||!Array.isArray(r.standardTextRoutes)||!r.standardTextRoutes.every(v=>r.routes.includes(v)&&!v.includes(':')&&!v.startsWith('~'))||!Array.isArray(r.standardTextOverrideRoutes)||!r.standardTextOverrideRoutes.every(v=>r.standardTextRoutes.includes(v))||!text(r.name))throw Error('Invalid price offer');
   if(!Array.isArray(p.activity?.days)||!['rawContexts','nativeRows','aliasDuplicateRows','excludedNoCanonicalRows','excludedMissingIdentityRows'].every(k=>count(p.activity[k])))throw Error('Invalid activity coverage');
   let previous='',nativeRows=0;
   for(const day of p.activity.days){if(!day.date||nativeDate(day.date)!==day.date||day.date<=previous||typeof day.partial!=='boolean'||!Array.isArray(day.origins))throw Error('Invalid activity day');previous=day.date;const seen=new Set();for(const r of day.origins){if(!origin(r)||seen.has(r.originId)||!['tokens','promptTokens','completionTokens'].every(k=>number(r[k]))||!['rows','knownRows','unknownRows'].every(k=>count(r[k]))||r.rows!==r.knownRows+r.unknownRows)throw Error('Invalid activity group');seen.add(r.originId);nativeRows+=r.rows;}}
   if(nativeRows!==p.activity.nativeRows)throw Error('Activity row coverage mismatch');
+  if(p.valuation?.method!=='default-catalog-price-scenario-v1'||p.valuation.currency!=='USD'||!Array.isArray(p.valuation.rows))throw Error('Invalid valuation method');
+  // Recompute the small deterministic join: never trust orphan, stale or altered monetary rows.
+  if(JSON.stringify(p.valuation)!==JSON.stringify(compileValuation(p.usage,p.pricing)))throw Error('Valuation source/amount mismatch');
   return p;
 }
