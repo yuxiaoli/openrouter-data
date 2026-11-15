@@ -126,3 +126,9 @@ npm run qa:render --prefix charts -- ../.cache/current-snapshot.json qa/render-w
 gh run list --repo yuxiaoli/openrouter-data --workflow chart-cli.yml
 gh run list --repo yuxiaoli/openrouter-data --workflow charts-pages.yml
 gh workflow run charts-pages.yml --repo yuxiaoli/openrouter-data --ref main
+
+# Additive country/developer-origin view: compile-current also writes
+# .cache/current-origins.json from the SAME existing verified archive bundle.
+node --test charts/tests/origins.test.mjs charts/tests/origins-ui.test.mjs
+# Optional explicit origins companion path; publisher verifies matching identities.
+node charts/scripts/publish-snapshot.mjs .cache/current-snapshot.json charts/site-dist .cache/current-origins.json

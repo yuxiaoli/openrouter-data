@@ -170,3 +170,13 @@ npm run smoke -- https://openrouter-data.pages.dev
 ```
 
 每日同步仅更新数据分支，不重新部署代码。代码部署与数据同步相互独立，运行失败不会通过空数据替换成功结果。首次真实同步、测试、部署和线上验收证据记录在 [docs/operations.md](docs/operations.md)。
+
+### Developer-origin view
+
+[Country and region comparisons](https://yuxiaoli.github.io/openrouter-data/origins/) add daily public token observations, native daily activity trends, and text-output catalog input/output quote means and medians. The existing fourteen-chart gallery is unchanged.
+
+Geography describes a reviewed developer-organization proxy, not inference providers, users, training sites or national demand. China, the US, geographic Europe, other known countries, cross-border organizations and unknown origins are mutually exclusive. Country breakdowns and attribution references are available on the page. Google/DeepMind is a US/GB cross-border group, not split between countries.
+
+The view compiles `origins.json` from the same checksum-verified snapshot as `snapshot.json`; `version.json` records both hashes. It refreshes through the existing `Daily OpenRouter snapshot` completion workflow, with no additional collector or schedule. Native daily rankings and activity feeds are separate samples and need not agree. Prices are unweighted catalog quotes, not realized inference spend; missing and negative sentinel prices are unavailable, while genuine zero quotes remain free.
+
+Methodology, identity deduplication and validation commands: [charts/README.md](charts/README.md#developer-origin-comparisons).

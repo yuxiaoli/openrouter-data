@@ -1,6 +1,14 @@
 import fs from 'node:fs/promises';import path from 'node:path';import {createHash} from 'node:crypto';import {validatePayload} from '../src/payload.mjs';import {validateSnapshot} from '../src/contract.mjs';
+import {validateOrigins,ORIGINS_MAX_BYTES} from '../src/origins.mjs';
 const source=process.argv[2]||'.cache/current-snapshot.json',dest=process.argv[3]||'charts/site-dist';
 const body=await fs.readFile(source,'utf8'),s=validateSnapshot(validatePayload(JSON.parse(body)));
+const originsSource=process.argv[4]||path.join(path.dirname(source),'current-origins.json');
+const originBody=await fs.readFile(originsSource,'utf8');
+if(Buffer.byteLength(originBody)>ORIGINS_MAX_BYTES)throw Error('Origins payload too large');
+const origins=validateOrigins(JSON.parse(originBody));
+for(const key of ['snapshot','collectedAt','archiveRevision','sourceCommit'])if(origins[key]!==s[key])throw Error('Origins/gallery identity mismatch');
+if(origins.provenance.manifestSha256!==s.provenance.manifestSha256)throw Error('Origins/gallery provenance mismatch');
 await fs.writeFile(path.join(dest,'snapshot.json'),body);
-await fs.writeFile(path.join(dest,'version.json'),JSON.stringify({schema_version:1,snapshot:s.snapshot,collected_at:s.collectedAt,archive_revision:s.archiveRevision,source_commit:s.sourceCommit,latest_attempt:s.latestAttempt,chart_count:s.charts.length,snapshot_sha256:createHash('sha256').update(body).digest('hex'),renderer:'ECharts 6.0.0 / browser SVG',source:'existing checksum-verified OpenRouter Data archive'},null,2)+'\n');
+await fs.writeFile(path.join(dest,'origins.json'),originBody);
+await fs.writeFile(path.join(dest,'version.json'),JSON.stringify({schema_version:1,origins_sha256:createHash('sha256').update(originBody).digest('hex'),snapshot:s.snapshot,collected_at:s.collectedAt,archive_revision:s.archiveRevision,source_commit:s.sourceCommit,latest_attempt:s.latestAttempt,chart_count:s.charts.length,snapshot_sha256:createHash('sha256').update(body).digest('hex'),renderer:'ECharts 6.0.0 / browser SVG',source:'existing checksum-verified OpenRouter Data archive'},null,2)+'\n');
 await fs.writeFile(path.join(dest,'.nojekyll'),'');

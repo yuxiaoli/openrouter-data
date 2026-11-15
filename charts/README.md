@@ -69,3 +69,25 @@ An optional fourth argument names a local CJK font file and also creates PNGs fo
 ## Fonts and licensing
 
 `assets/fonts/chart-cjk.woff` is a Noto Sans CJK JP subset containing the chart/UI Chinese text, Latin letters, digits and relevant symbols. Its SIL Open Font License notice is retained as `LICENSE-Noto.txt`. Other CJK characters introduced by future upstream labels fall back to the user's installed sans-serif fonts. ECharts and transitive renderer license notices are emitted alongside `app.js`; full ECharts LICENSE/NOTICE and ZRender LICENSE are included under `site-dist/licenses/`.
+
+## Developer-origin comparisons
+
+The additive `/origins/` page and `origins.json` use the same verified archive bundle as the fourteen-chart gallery. `compile-current.mjs` writes `current-snapshot.json` and `current-origins.json` together; `publish-snapshot.mjs` requires both identities to agree and records each SHA-256 in `version.json`. A missing or invalid companion payload prevents deployment.
+
+- **Daily usage:** only native `day` / `tokens` rankings with declared token units. Native `(variant_permaslug, date)` duplicates must agree. Missing identities remain in the unknown sample, including positive observed amounts. Different native dates are selectable, never silently combined. Native dates have no declared timezone.
+- **Activity:** each native variant/date needs an exact `model_id === variant_permaslug` request context. Alias copies must agree on relevant values. Missing identity/date or absent canonical contexts are explicitly counted as excluded; gaps are not zero-filled. The latest returned native day is marked potentially incomplete, without claiming an exact timezone boundary. Sample membership changes over time. Activity and rankings are distinct public observations, not reconciled or added together.
+- **Price:** text-output catalog only, deduplicated by explicit canonical slug plus normalized prompt/completion quote pair. Routes remain listed. Missing canonical identities are not inferred from route names. Each side has separate known/missing/free counts and unweighted arithmetic mean/median; actual zero stays free. Other modality, request and cache charges are excluded. Countries lacking text-price observations remain unavailable; regional coverage is disclosed.
+- **Attribution:** `config/origin-attribution.v1.json` is dated, manually reviewed and cites primary sources. Only exact reviewed namespaces match. Country codes within Europe are grouped geographically, not as the EU. Cross-border organizations have one separate bucket. This is an organizational geography proxy, not a claim about users, serving providers, training sites or legal model nationality. Daily builds never fetch attribution sources.
+
+```sh
+# Existing archive download/pin commands are unchanged.
+GITHUB_SHA="$(git rev-parse HEAD)" node charts/scripts/compile-current.mjs .cache/archive .cache/current-snapshot.json
+npm --prefix charts test
+npm --prefix charts run build
+node charts/scripts/publish-snapshot.mjs .cache/current-snapshot.json charts/site-dist
+node charts/scripts/verify-site.mjs charts/site-dist
+# Optional explicit companion path for a portable build:
+node charts/scripts/publish-snapshot.mjs .cache/current-snapshot.json charts/site-dist .cache/current-origins.json
+```
+
+Open `origins/` on a static preview server. Browser acceptance must cover date/group switches, price sample/unknown handling, repeated refresh, search, stale/error states, and actual 390px viewport overflow, in addition to the existing fourteen-chart gallery.
