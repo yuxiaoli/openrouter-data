@@ -1,0 +1,416 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-11-15",
+  "definition": "开发组织地域归属的人工审核代理指标：依据一手资料记载的总部、主要运营所在地或明确的创立来源。不是模型训练地点、推理服务商所在地、用户所在地或法律上的模型国籍。跨地域开发组织无法可靠归于单一国家时单列；没有已审核归属的命名空间显示未知。",
+  "europeCountryCodes": [
+    "FR",
+    "DE",
+    "GB"
+  ],
+  "europeDefinition": "本版已核实的欧洲国家为法国、德国、英国；欧洲是地理比较组，不等同欧盟，且不会再与这些国家重复相加。",
+  "identityPolicy": "仅以原生 model_permaslug 或 catalog canonical_slug 的完整首段匹配已审核命名空间；不以推理 provider、展示名、基础模型名称、创始人国籍或不明路由别名推断。空标识、未匹配和未审核命名空间保留为未知。",
+  "organizations": {
+    "deepseek": {
+      "name": "DeepSeek",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html",
+          "title": "DeepSeek Privacy Policy"
+        }
+      ],
+      "notes": "官方隐私政策列明杭州开发主体及中国注册地址。"
+    },
+    "tencent": {
+      "name": "Tencent",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://www.tencent.com/who-we-are/",
+          "title": "Tencent: Who We Are"
+        }
+      ],
+      "notes": "官方介绍明确总部位于中国深圳。"
+    },
+    "qwen": {
+      "name": "Alibaba / Qwen",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://www.alibabagroup.com/en-US/ai-governance/qwen",
+          "title": "Alibaba: Qwen"
+        },
+        {
+          "url": "https://www.alibabagroup.com/en-US/faqs-corporate-information",
+          "title": "Alibaba: Corporate Information FAQ"
+        }
+      ],
+      "notes": "Qwen 官方说明开发者为 Alibaba；集团主要运营办公室位于中国杭州。"
+    },
+    "alibaba": {
+      "name": "Alibaba / Qwen",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://www.alibabagroup.com/en-US/ai-governance/qwen",
+          "title": "Alibaba: Qwen"
+        },
+        {
+          "url": "https://www.alibabagroup.com/en-US/faqs-corporate-information",
+          "title": "Alibaba: Corporate Information FAQ"
+        }
+      ],
+      "notes": "Qwen 官方说明开发者为 Alibaba；集团主要运营办公室位于中国杭州。"
+    },
+    "z-ai": {
+      "name": "Z.ai / Zhipu",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://www.zhipuai.cn/en/contact",
+          "title": "Zhipu: Contact Us"
+        }
+      ],
+      "notes": "开发组织官方联系页列明中国北京地址并关联 GLM 与 Z.ai。"
+    },
+    "moonshotai": {
+      "name": "Moonshot AI",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://www.moonshot.ai/about/",
+          "title": "Moonshot AI: About"
+        }
+      ],
+      "notes": "开发组织官方介绍列明中国北京地址。"
+    },
+    "minimax": {
+      "name": "MiniMax",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://ir.minimax.io/investor-resources/ir-contacts",
+          "title": "MiniMax: IR Contacts"
+        }
+      ],
+      "notes": "官方投资者联系页列明上海、北京、深圳的中国运营地址。"
+    },
+    "stepfun": {
+      "name": "StepFun",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://platform.stepfun.com/legal/user-agreement.html",
+          "title": "StepFun: 用户服务协议"
+        }
+      ],
+      "notes": "官方服务协议列明上海阶跃星辰智能科技股份有限公司。"
+    },
+    "xiaomi": {
+      "name": "Xiaomi",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://www.mi.com/global/about/agreement/",
+          "title": "Xiaomi: User Agreement"
+        }
+      ],
+      "notes": "官方协议列明北京的开发组织办公地址。"
+    },
+    "baidu": {
+      "name": "Baidu",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://ir.baidu.com/shareholder-services/investor-faqs",
+          "title": "Baidu: Investor FAQs"
+        }
+      ],
+      "notes": "官方投资者 FAQ 明确总部位于中国北京。"
+    },
+    "bytedance": {
+      "name": "ByteDance / Seed",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bytedance.com/about",
+          "title": "ByteDance: About Us"
+        },
+        {
+          "url": "https://seed.bytedance.com/en/",
+          "title": "ByteDance Seed"
+        }
+      ],
+      "notes": "官方公司史明确创立于中国北京；Seed 官方页面确认开发组织。此项是组织创立来源代理，不声称全部团队或推理节点位于中国。"
+    },
+    "bytedance-seed": {
+      "name": "ByteDance / Seed",
+      "countryCodes": [
+        "CN"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bytedance.com/about",
+          "title": "ByteDance: About Us"
+        },
+        {
+          "url": "https://seed.bytedance.com/en/",
+          "title": "ByteDance Seed"
+        }
+      ],
+      "notes": "官方公司史明确创立于中国北京；Seed 官方页面确认开发组织。此项是组织创立来源代理，不声称全部团队或推理节点位于中国。"
+    },
+    "openai": {
+      "name": "OpenAI",
+      "countryCodes": [
+        "US"
+      ],
+      "sources": [
+        {
+          "url": "https://openai.com/policies/developer-apps-terms/",
+          "title": "OpenAI: App Developer Terms"
+        }
+      ],
+      "notes": "官方开发者条款列明 OpenAI LLC 的美国旧金山地址；地区服务合同主体不改变本表的开发组织归属。"
+    },
+    "anthropic": {
+      "name": "Anthropic",
+      "countryCodes": [
+        "US"
+      ],
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/transparency/voluntary-commitments",
+          "title": "Anthropic: Voluntary Commitments"
+        }
+      ],
+      "notes": "官方透明度说明明确美国总部位于旧金山。"
+    },
+    "meta": {
+      "name": "Meta",
+      "countryCodes": [
+        "US"
+      ],
+      "sources": [
+        {
+          "url": "https://www.sec.gov/Archives/edgar/data/1326801/000162828026003942/meta-20251231.htm",
+          "title": "Meta: 2025 Form 10-K"
+        }
+      ],
+      "notes": "公司 2025 年报明确总部位于美国加州 Menlo Park。"
+    },
+    "meta-llama": {
+      "name": "Meta",
+      "countryCodes": [
+        "US"
+      ],
+      "sources": [
+        {
+          "url": "https://www.sec.gov/Archives/edgar/data/1326801/000162828026003942/meta-20251231.htm",
+          "title": "Meta: 2025 Form 10-K"
+        }
+      ],
+      "notes": "公司 2025 年报明确总部位于美国加州 Menlo Park。"
+    },
+    "nvidia": {
+      "name": "NVIDIA",
+      "countryCodes": [
+        "US"
+      ],
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/contact/",
+          "title": "NVIDIA: Contact"
+        }
+      ],
+      "notes": "官方联系页列明公司总部地址为美国加州 Santa Clara；路由型条目不能由此推出实际被路由模型的开发者。"
+    },
+    "microsoft": {
+      "name": "Microsoft",
+      "countryCodes": [
+        "US"
+      ],
+      "sources": [
+        {
+          "url": "https://www.microsoft.com/en-us/about/office-locations",
+          "title": "Microsoft: Office Locations"
+        }
+      ],
+      "notes": "官方办公地点页明确全球总部位于美国华盛顿州 Redmond。"
+    },
+    "amazon": {
+      "name": "Amazon",
+      "countryCodes": [
+        "US"
+      ],
+      "sources": [
+        {
+          "url": "https://www.amazon.jobs/content/en/locations/hq1",
+          "title": "Amazon: Headquarters in Washington"
+        }
+      ],
+      "notes": "官方总部介绍明确西岸总部在美国华盛顿州；其他美国总部不另行计数。"
+    },
+    "liquid": {
+      "name": "Liquid AI",
+      "countryCodes": [
+        "US"
+      ],
+      "sources": [
+        {
+          "url": "https://cap.csail.mit.edu/node/4185",
+          "title": "MIT CSAIL: Liquid AI"
+        }
+      ],
+      "notes": "MIT 官方公司档案列明 MIT 衍生公司总部位于美国马萨诸塞州 Boston。"
+    },
+    "perplexity": {
+      "name": "Perplexity AI",
+      "countryCodes": [
+        "US"
+      ],
+      "sources": [
+        {
+          "url": "https://www.sec.gov/Archives/edgar/data/1972171/000156761923005521/xslFormDX01/primary_doc.xml",
+          "title": "Perplexity AI: SEC Form D (2023)"
+        }
+      ],
+      "notes": "公司提交的 2023 年 SEC Form D 记载美国旧金山主要营业地点；按该历史一手文件记录组织地域来源，不声称办公地址实时不变。"
+    },
+    "x-ai": {
+      "name": "xAI",
+      "countryCodes": [
+        "US"
+      ],
+      "sources": [
+        {
+          "url": "https://www.sec.gov/Archives/edgar/data/2079267/000089183626000001/xslFormDX01/primary_doc.xml",
+          "title": "X.AI Holdings: SEC Form D (2026)"
+        }
+      ],
+      "notes": "公司提交的 2026 年 SEC Form D 记载美国加州 Palo Alto 主要营业地点。"
+    },
+    "mistralai": {
+      "name": "Mistral AI",
+      "countryCodes": [
+        "FR"
+      ],
+      "sources": [
+        {
+          "url": "https://mistral.ai/fr/legal/",
+          "title": "Mistral AI: Legal Notice"
+        }
+      ],
+      "notes": "开发组织官方法律声明列明法国巴黎主体。"
+    },
+    "black-forest-labs": {
+      "name": "Black Forest Labs",
+      "countryCodes": [
+        "DE"
+      ],
+      "sources": [
+        {
+          "url": "https://bfl.ai/legal/imprint",
+          "title": "Black Forest Labs: Imprint"
+        }
+      ],
+      "notes": "官方法律声明列明德国 Freiburg 的 Black Forest Labs GmbH；该地域代理不意味着其国际研发团队仅在德国。"
+    },
+    "sourceful": {
+      "name": "Sourceful",
+      "countryCodes": [
+        "GB"
+      ],
+      "sources": [
+        {
+          "url": "https://www.sourceful.com/blog/betting-big-on-manchester-why-we-are-building-sourceful-in-the-worlds-original-industrialised-city",
+          "title": "Sourceful: Why We Are Building in Manchester"
+        }
+      ],
+      "notes": "创始人官方文章明确公司创立地及主要总部为英国 Manchester。"
+    },
+    "elevenlabs": {
+      "name": "ElevenLabs",
+      "countryCodes": [
+        "GB"
+      ],
+      "sources": [
+        {
+          "url": "https://elevenlabs.io/blog/uk-mou-and-expansion",
+          "title": "ElevenLabs: UK Partnership and London HQ Expansion"
+        }
+      ],
+      "notes": "2026 年官方文章明确 London HQ 与在伦敦建设全球管理团队；此项按总部运营中心而非美国合同主体归属，也不以创始人国籍归属。"
+    },
+    "cohere": {
+      "name": "Cohere",
+      "countryCodes": [
+        "CA"
+      ],
+      "sources": [
+        {
+          "url": "https://cohere.com/about",
+          "title": "Cohere: About"
+        }
+      ],
+      "notes": "官方介绍记载创立于 Toronto、源于加拿大；全球办公室不重复计入其他国家。"
+    },
+    "sakana": {
+      "name": "Sakana AI",
+      "countryCodes": [
+        "JP"
+      ],
+      "sources": [
+        {
+          "url": "https://sakana.ai/company-info/",
+          "title": "Sakana AI: Company Information"
+        }
+      ],
+      "notes": "官方公司简介明确其为日本东京的研发公司。"
+    },
+    "google": {
+      "name": "Google / Google DeepMind",
+      "countryCodes": [
+        "US",
+        "GB"
+      ],
+      "sources": [
+        {
+          "url": "https://policies.google.com/terms?hl=en-US",
+          "title": "Google: Terms of Service"
+        },
+        {
+          "url": "https://find-and-update.company-information.service.gov.uk/company/07386350",
+          "title": "UK Companies House: DeepMind Technologies Limited"
+        },
+        {
+          "url": "https://deepmind.google/about/",
+          "title": "Google DeepMind: About and Developer Organization History"
+        }
+      ],
+      "notes": "Google 命名空间涵盖跨美国 Google 与英国 DeepMind 的开发组织，目录不足以可靠逐个模型分离归属，因此整项单列跨地域，不拆分或重复计入美国、英国及欧洲。"
+    }
+  }
+}

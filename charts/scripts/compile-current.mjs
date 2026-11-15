@@ -1,6 +1,7 @@
 /** Compile existing checksum-verified archive data, never fetch upstream OpenRouter. */
 import fs from 'node:fs/promises';import path from 'node:path';import {gunzipSync} from 'node:zlib';import {createHash} from 'node:crypto';
 import {compileGallery,PAYLOAD_DATASETS,PUBLIC_DATASETS} from '../src/compile-all.mjs';
+import {compileOrigins,ORIGINS_MAX_BYTES} from '../src/origins.mjs';
 import {validatePayload,MAX_BYTES} from '../src/payload.mjs';
 const root=path.resolve(process.argv[2]||'.cache/archive'),output=path.resolve(process.argv[3]||'.cache/current-snapshot.json');
 const state=JSON.parse(await fs.readFile(path.join(root,'state.json'),'utf8'));
@@ -33,8 +34,16 @@ for(const name of PAYLOAD_DATASETS){
 }
 const sourceCommit=process.env.GITHUB_SHA||state.source_commit;
 if(!/^[a-f0-9]{40}$/.test(sourceCommit||''))throw Error('Source commit identity required');
-const compact=compileGallery({manifest,datasets,archive_revision:state.archive_revision,source_commit:sourceCommit,latest_attempt:state.latest_attempt,provenance:{archiveChecksumsVerified:true,sourceRepository:'https://github.com/yuxiaoli/openrouter-data',archiveRevision:state.archive_revision,manifestSha256:sha(manifestBytes),verifiedInputFiles:files}});
+const bundle={manifest,datasets,archive_revision:state.archive_revision,source_commit:sourceCommit,latest_attempt:state.latest_attempt,provenance:{archiveChecksumsVerified:true,sourceRepository:'https://github.com/yuxiaoli/openrouter-data',archiveRevision:state.archive_revision,manifestSha256:sha(manifestBytes),verifiedInputFiles:files}};
+const compact=compileGallery(bundle);
 validatePayload(compact);const body=JSON.stringify(compact);
 if(Buffer.byteLength(body)>MAX_BYTES)throw Error('Compact snapshot exceeds update limit');
 await fs.mkdir(path.dirname(output),{recursive:true});await fs.writeFile(output,body);
 console.log(JSON.stringify({snapshot:compact.snapshot,archiveRevision:compact.archiveRevision,sourceCommit,chartCount:compact.charts.length,bytes:Buffer.byteLength(body),sha256:sha(body),verifiedInputFiles:files}));
+
+const attribution=JSON.parse(await fs.readFile(new URL('../config/origin-attribution.v1.json',import.meta.url),'utf8'));
+const origins=compileOrigins(bundle,attribution),originBody=JSON.stringify(origins);
+if(Buffer.byteLength(originBody)>ORIGINS_MAX_BYTES)throw Error('Origins payload exceeds size limit');
+const originOutput=path.join(path.dirname(output),'current-origins.json');
+await fs.writeFile(originOutput,originBody);
+console.log(JSON.stringify({origins:originOutput,snapshot:origins.snapshot,bytes:Buffer.byteLength(originBody),usageRows:origins.usage.rows.length,priceOffers:origins.pricing.offers.length,activityNativeRows:origins.activity.nativeRows,sha256:sha(originBody)}));
